@@ -2,7 +2,7 @@
    De anon/publishable key is publiek bedoeld; toegang wordt geregeld door Row Level Security in Supabase. */
 const SB_URL="https://xcouykrxuihszhleobcw.supabase.co";
 const SB_KEY="sb_publishable_IfL47J2WQwmSsALSjEVWJg_UmgAowNL";
-const TEAM=["Stijn","Timo","Jeroen","Kevin","Lars","Cacharel","Puck"];
+const TEAM=["Stijn","Sil","Timo","Jeroen","Kevin","Lars","Cacharel","Puck","Colin"];
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"fa-cockpit-auth"}});
 const emailOf=n=>n.toLowerCase()+"@cockpit.fitnessaannemer.nl";
 const pwOf=p=>"fa-pin-"+p;

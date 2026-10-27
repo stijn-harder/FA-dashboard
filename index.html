@@ -760,7 +760,7 @@ function renderTargets(){
   const active=document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("tg-");
   if(!active)$("tg-form").innerHTML=TARGET_FIELDS.map(([k,p,l])=>`<label>${p} · ${l}<input id="tg-${k}" type="number" min="0" value="${T[k]??""}" ${S.canEdit?"":"disabled"}></label>`).join("");
   $("tg-save").disabled=!S.canEdit;$("tg-copy").disabled=!S.canEdit;
-  $("tg-note").textContent=S.canEdit?"Targets gelden per maand. Oude maanden blijven bewaard.":"Alleen Stijn, Timo en Jeroen passen targets aan. Jij ziet ze alleen.";
+  $("tg-note").textContent=S.canEdit?"Targets gelden per maand. Oude maanden blijven bewaard.":"Alleen Stijn, Sil, Timo en Jeroen passen targets aan. Jij ziet ze alleen.";
 }
 
 /* ---------- Odoo ---------- */
@@ -884,7 +884,7 @@ $("lead-form").addEventListener("submit",async e=>{e.preventDefault();
   if(await save("leads",null,d)){toast("Lead opgeslagen");closeDrawer()}});
 $("tg-save").onclick=async()=>{const d={};TARGET_FIELDS.forEach(([k])=>{const v=$("tg-"+k).value;if(v!=="")d[k]=+v});d.maand=S.month;
   if(!S.db)return toast("Geen verbinding met de database.");
-  try{await S.db.doc("data/targets/maanden/"+S.month).set(d);toast("Targets opgeslagen");document.activeElement.blur()}catch(e){toast("Alleen Stijn, Timo en Jeroen kunnen targets opslaan.")}};
+  try{await S.db.doc("data/targets/maanden/"+S.month).set(d);toast("Targets opgeslagen");document.activeElement.blur()}catch(e){toast("Alleen Stijn, Sil, Timo en Jeroen kunnen targets opslaan.")}};
 $("tg-copy").onclick=()=>{const [y,m]=S.month.split("-").map(Number);const p=m===1?(y-1)+"-12":y+"-"+pad(m-1);const T=S.targets[p];if(!T)return toast("Geen targets gevonden voor "+monthLabel(p));
   TARGET_FIELDS.forEach(([k])=>{if(T[k]!=null)$("tg-"+k).value=T[k]});toast("Overgenomen van "+monthLabel(p)+". Klik op opslaan.")};
 
