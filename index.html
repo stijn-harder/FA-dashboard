@@ -784,7 +784,7 @@ function byPerson(rows,key){const o={};(rows||[]).forEach(r=>{const p=r.e||"Onbe
 function openDetail(title,sub,html){openDrawer("detail",true);$("dr-title").textContent=title;$("detail").innerHTML=(sub?`<p class="muted" style="margin:0 0 14px;font-size:13px">${sub}</p>`:"")+html}
 function odooDetail(k){const o=S.odoo;if(!o)return;
   if(k==="week")return openDetail("Offertes verstuurd deze week",`${o.offertesWeek} offertes · ${eur(o.offertesWeekWaarde)}. Alleen verstuurde en bevestigde offertes, geen concepten.`,byPerson(o.offertesWeekLijst)+oTable(o.offertesWeekLijst));
-  if(k==="fc2026"||k==="fc2027")return forecastDetail(k.slice(2));
+  if(/^(vk|rl)20\d\d$/.test(k))return forecastDetail(k.slice(0,2),k.slice(2));
   if(k==="zonder")return zonderDetail();
   if(k==="orders")return ordersDetail();
   if(k==="port")return openDetail("Offerteportefeuille",`${o.portefeuilleAantal} openstaande verstuurde offertes · ${eur(o.portefeuilleWaarde)}. Concepten tellen niet mee. Per verkoopkans telt alleen de nieuwste offerte.`,byPerson(o.portefeuilleLijst)+oTable(o.portefeuilleLijst)+((o.portefeuilleLijst||[]).length<o.portefeuilleAantal?`<p class="muted" style="font-size:12px">Top ${(o.portefeuilleLijst||[]).length} op bedrag.</p>`:""));
@@ -799,10 +799,15 @@ function odooDetail(k){const o=S.odoo;if(!o)return;
 const SERIES=[
   ["offerteportefeuille","Offerteportefeuille","#279FDA","","port"],
   ["orderportefeuille","Orderportefeuille","var(--good)","","orders"],
-  ["fc2026Ong","Forecast 2026 ongewogen","#9CCBEA","6 4","fc2026"],
-  ["fc2026Gew","Forecast 2026 gewogen","#279FDA","","fc2026"],
-  ["fc2027Ong","Forecast 2027 ongewogen","#9CCBEA","6 4","fc2027"],
-  ["fc2027Gew","Forecast 2027 gewogen","#279FDA","","fc2027"]];
+  ["fc2026Ong","Verkoop 2026 ongewogen","#9CCBEA","6 4","vk2026"],
+  ["fc2026Gew","Verkoop 2026 gewogen","#279FDA","","vk2026"],
+  ["rl2026Ong","Realisatie 2026 ongewogen","#8C99A3","6 4","rl2026"],
+  ["rl2026Gew","Realisatie 2026 gewogen","var(--fg)","","rl2026"],
+  ["fc2027Ong","Verkoop 2027 ongewogen","#9CCBEA","6 4","vk2027"],
+  ["fc2027Gew","Verkoop 2027 gewogen","#279FDA","","vk2027"],
+  ["rl2027Ong","Realisatie 2027 ongewogen","#8C99A3","6 4","rl2027"],
+  ["rl2027Gew","Realisatie 2027 gewogen","var(--fg)","","rl2027"]];
+const fcBak=(f,t)=>t==="rl"?(f.realisatie||{}):(f.verkoop||f.jaren||{});
 const SER=Object.fromEntries(SERIES.map(s=>[s[0],s]));
 const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return iso_(d)};
 const iso_=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
@@ -821,7 +826,7 @@ function weekRows(n){
     const inW=t.filter(x=>x.datum>=m&&x.datum<=end);const last=inW[inW.length-1]||null;
     const lo=o.filter(x=>x.datum<=end).pop();
     const r={key:wk.key,mon:m,end};
-    for(const k of ["offerteportefeuille","fc2026Ong","fc2026Gew","fc2027Ong","fc2027Gew"])r[k]=last&&last[k]!=null?+last[k]:null;
+    for(const k of ["offerteportefeuille","fc2026Ong","fc2026Gew","fc2027Ong","fc2027Gew","rl2026Ong","rl2026Gew","rl2027Ong","rl2027Gew"])r[k]=last&&last[k]!=null?+last[k]:null;
     r.orderportefeuille=lo?+lo.bedrag:null;rows.push(r)}
   return rows}
 function deltaHtml(cur,past,label){if(cur==null||past==null)return `<span class="muted">${label}: nog geen stand</span>`;const d=cur-past;const pct=past?Math.round(d/past*100):0;
@@ -846,17 +851,19 @@ function weekChart(rows,keys,label){
 function renderPortfolio(o){
   const n=S.trendRange;const rows=weekRows(n);const r8=weekRows(9);
   const latestOrder=[...S.orders].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
-  const f=o&&o.forecast||{};const J=f.jaren||{};const j26=J["2026"]||{},j27=J["2027"]||{};
-  const cur={offerteportefeuille:o?o.portefeuilleWaarde:null,orderportefeuille:latestOrder?+latestOrder.bedrag:null,fc2026Ong:j26.ongewogen??null,fc2026Gew:j26.gewogen??null,fc2027Ong:j27.ongewogen??null,fc2027Gew:j27.gewogen??null};
-  const sub={offerteportefeuille:o?(o.portefeuilleAantal??0)+" open offertes, zonder concepten":"",orderportefeuille:latestOrder?"stand "+wkLabel(isoWeek(latestOrder.datum).key)+" ("+dLabel(latestOrder.datum)+")"+(latestOrder.door?" · "+latestOrder.door:""):"nog niet ingevuld",
-    fc2026Ong:j26.aantal!=null?j26.aantal+" kansen, volle verwachte waarde":"",fc2026Gew:"verwachte waarde × slagingskans",fc2027Ong:j27.aantal!=null?j27.aantal+" kansen, volle verwachte waarde":"",fc2027Gew:"verwachte waarde × slagingskans"};
+  const f=o&&o.forecast||{};const V=fcBak(f,"vk"),R=fcBak(f,"rl");
+  const cur={offerteportefeuille:o?o.portefeuilleWaarde:null,orderportefeuille:latestOrder?+latestOrder.bedrag:null};
+  const sub={offerteportefeuille:o?(o.portefeuilleAantal??0)+" open offertes, zonder concepten":"",orderportefeuille:latestOrder?"stand "+wkLabel(isoWeek(latestOrder.datum).key)+" ("+dLabel(latestOrder.datum)+")"+(latestOrder.door?" · "+latestOrder.door:""):"nog niet ingevuld"};
+  for(const y of ["2026","2027"])for(const [pre,B,wat] of [["fc",V,"sluitingsdatum"],["rl",R,"opleverdatum"]]){const J=B[y]||{};
+    cur[pre+y+"Ong"]=J.ongewogen??null;cur[pre+y+"Gew"]=J.gewogen??null;
+    sub[pre+y+"Ong"]=J.aantal!=null?J.aantal+" kansen met "+wat+" in "+y:"";sub[pre+y+"Gew"]="verwachte waarde × slagingskans"}
   const prevW=r8[r8.length-2],w8=r8[0];
-  const card=k=>{const [,nm,c,,det]=SER[k];return `<button class="card click-card pcard" data-od="${det}"><div class="row between"><span class="eyebrow">${nm}</span><i class="sw" style="background:${c}"></i></div>
+  const card=k=>{const [,nm,c,,det]=SER[k];return `<button class="card click-card pcard" data-od="${det}"><div class="row between"><span class="eyebrow">${/^(fc|rl)/.test(k)?nm.replace(/ \d{4}/,""):nm}</span><i class="sw" style="background:${c}"></i></div>
     <div class="stat num">${cur[k]==null?"–":eurK(cur[k])}</div><div class="muted" style="font-size:12px">${sub[k]}</div>
     ${spark(r8,k,c)}
     <div class="deltas">${deltaHtml(cur[k],prevW&&prevW[k],"t.o.v. vorige week ("+wkLabel(prevW.key)+")")}<br>${deltaHtml(cur[k],w8&&w8[k],"t.o.v. 8 weken terug ("+wkLabel(w8.key)+")")}</div></button>`};
   const z=f.zonderDatum;
-  const legend=keys=>`<div class="legend tr-leg">${keys.map(k=>{const[,nm,c,dash]=SER[k];return `<button type="button" class="lg${S.trendHide[k]?" off":""}" data-k="${k}"><i style="background:${c}${dash?";opacity:.7":""}"></i>${nm.replace(/^Forecast \d{4} /,"")}</button>`}).join("")}</div>`;
+  const legend=keys=>`<div class="legend tr-leg">${keys.map(k=>{const[,nm,c,dash]=SER[k];return `<button type="button" class="lg${S.trendHide[k]?" off":""}" data-k="${k}"><i style="background:${c}${dash?";opacity:.7":""}"></i>${nm.replace(/ \d{4}/,"")}</button>`}).join("")}</div>`;
   const chartCard=(title,keys)=>`<div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:6px"><h3>${title}</h3>${legend(keys)}</div><div class="chart">${weekChart(rows,keys,title)}</div></div>`;
   const thisWk=isoWeek(today_());
   return `<section style="display:grid;gap:16px">
@@ -864,27 +871,25 @@ function renderPortfolio(o){
       <div class="seg" id="tr-range">${[[8,"8 weken"],[13,"13 weken"],[26,"26 weken"],[0,"Alles"]].map(([v,l])=>`<button type="button" data-r="${v}" aria-pressed="${S.trendRange===v}">${l}</button>`).join("")}</div></div>
     <div class="eyebrow">Portefeuilles</div>
     <div class="grid2">${card("offerteportefeuille")}${card("orderportefeuille")}</div>
-    <div class="eyebrow" style="margin-top:6px">Forecast 2026</div>
-    <div class="grid2">${card("fc2026Ong")}${card("fc2026Gew")}</div>
-    <div class="eyebrow" style="margin-top:6px">Forecast 2027</div>
-    <div class="grid2">${card("fc2027Ong")}${card("fc2027Gew")}</div>
+    ${["2026","2027"].map(y=>`<div class="row between" style="margin-top:6px;flex-wrap:wrap;gap:4px"><span class="eyebrow">Forecast ${y}</span><span class="muted" style="font-size:12px">Verkoop = op sluitingsdatum · Realisatie = op opleverdatum</span></div>
+    <div class="grid4">${card("fc"+y+"Ong")}${card("fc"+y+"Gew")}${card("rl"+y+"Ong")}${card("rl"+y+"Gew")}</div>`).join("")}
     ${z&&z.aantal?`<button class="card click-card" data-od="zonder" style="text-align:left;border-color:var(--warn,#E0A100)"><div class="row between"><span class="eyebrow">Niet in de forecast</span><span class="muted" style="font-size:12px">bekijk lijst</span></div>
       <div style="font-size:15px;margin-top:4px"><b>${z.aantal} open kansen (${eurK(z.waarde)})</b> missen een sluitingsdatum of opleverdatum en tellen daarom niet mee.</div>
       <div class="muted" style="font-size:12px;margin-top:4px">${Object.entries(z.perPersoon||{}).sort((a,b)=>b[1]-a[1]).map(([p,c])=>esc(p)+" "+c).join(" · ")}</div></button>`:""}
-    <div style="display:grid;gap:16px">${chartCard("Portefeuilles per week",["offerteportefeuille","orderportefeuille"])}${chartCard("Forecast 2026 per week",["fc2026Ong","fc2026Gew"])}${chartCard("Forecast 2027 per week",["fc2027Ong","fc2027Gew"])}</div>
-    <p class="muted" style="font-size:12px;margin:-4px 0 0">Per week telt de laatste stand van die week. De forecast telt alleen kansen met een sluitingsdatum én opleverdatum in Odoo; het jaar volgt uit de sluitingsdatum. Weekstanden van de forecast lopen vanaf week 44.</p>
+    <div style="display:grid;gap:16px">${chartCard("Portefeuilles per week",["offerteportefeuille","orderportefeuille"])}${chartCard("Forecast 2026 per week",["fc2026Ong","fc2026Gew","rl2026Ong","rl2026Gew"])}${chartCard("Forecast 2027 per week",["fc2027Ong","fc2027Gew","rl2027Ong","rl2027Gew"])}</div>
+    <p class="muted" style="font-size:12px;margin:-4px 0 0">Per week telt de laatste stand van die week. De forecast telt alleen kansen met een sluitingsdatum én opleverdatum in Odoo. Verkoop volgt het jaar van de sluitingsdatum, realisatie het jaar van de opleverdatum. Weekstanden van de forecast lopen vanaf week 44.</p>
     ${S.canEdit?`<div class="card"><h3>Orderportefeuille bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Totale bruto marge van getekende opdrachten die nog uitgevoerd moeten worden. Vul hem elke week in, bijvoorbeeld op maandag. De week wordt uit de datum bepaald.</p>
       <form class="f" id="ord-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Stand per<input id="ord-datum" type="date" required value="${today_()}"></label><label>Orderportefeuille (€)<input id="ord-bedrag" type="number" min="0" step="1000" required></label><label class="full">Notitie<input id="ord-notitie" placeholder="Bijvoorbeeld: incl. Axon en BASE"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>`:""}
   </section>`;
 }
 function today_(){return today()}
 function fcTbl(obj,keyName,tot){return `<div class="tbl"><table><thead><tr><th>${keyName}</th><th class="r">Kansen</th><th class="r">Ongewogen</th><th class="r">Gewogen</th></tr></thead><tbody>${Object.entries(obj||{}).sort((a,b)=>b[1].gewogen-a[1].gewogen).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="r num">${v.aantal}</td><td class="r num">${eur(v.ongewogen)}</td><td class="r num"><b>${eur(v.gewogen)}</b></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num">${tot.aantal??""}</td><td class="r num"><b>${eur(tot.ongewogen)}</b></td><td class="r num"><b>${eur(tot.gewogen)}</b></td></tr></tbody></table></div>`}
-function forecastDetail(y){const f=(S.odoo||{}).forecast||{};const J=(f.jaren||{})[y]||{};
+function forecastDetail(t,y){const f=(S.odoo||{}).forecast||{};const J=fcBak(f,t)[y]||{};const rl=t==="rl";
   const perFase=FASES.reduce((a,fz)=>{if(J.perFase&&J.perFase[fz])a[fz]=J.perFase[fz];return a},{});
   const lijst=(J.lijst||[]);
-  openDetail("Forecast "+y,`Open kansen met een sluitingsdatum in ${y==="2026"?"2026 (of eerder, dan is de datum verlopen)":y} én een opleverdatum. Ongewogen = volle verwachte opbrengst in Odoo, gewogen = keer de slagingskans. Dit is de verwachte opbrengst zoals in Odoo ingevuld, niet de bruto marge.${J.verlopen?` <b>${J.verlopen} kans${J.verlopen>1?"en hebben":" heeft"} een verlopen sluitingsdatum.</b>`:""}`,
+  openDetail((rl?"Realisatie ":"Verkoop ")+y,`Open kansen met een ${rl?"opleverdatum":"sluitingsdatum"} in ${y==="2026"?"2026 (of eerder, dan is de datum verlopen)":y} én een ${rl?"sluitingsdatum":"opleverdatum"}. Ongewogen = volle verwachte opbrengst in Odoo, gewogen = keer de slagingskans. Dit is de verwachte opbrengst zoals in Odoo ingevuld, niet de bruto marge.${J.verlopen?` <b>${J.verlopen} kans${J.verlopen>1?"en hebben":" heeft"} een verlopen ${rl?"opleverdatum":"sluitingsdatum"}.</b>`:""}`,
     `<h3 style="margin-bottom:6px">Per fase</h3>${fcTbl(perFase,"Fase",J)}<h3 style="margin:18px 0 6px">Per persoon</h3>${fcTbl(J.perPersoon,"Eigenaar",J)}
-    <h3 style="margin:18px 0 6px">Kansen${lijst.length>=40?" (top 40)":""}</h3><div class="tbl"><table><thead><tr><th>Kans</th><th>Eigenaar</th><th>Fase</th><th class="r">Waarde</th><th class="r">Kans</th><th>Sluiting</th><th>Oplevering</th></tr></thead><tbody>${lijst.map(k=>`<tr><td>${esc(k.n)}</td><td>${esc(k.e)}</td><td>${esc(k.f)}</td><td class="r num">${eur(k.w)}</td><td class="r num">${k.k}%</td><td class="num"${k.v?` style="color:var(--bad)" title="Sluitingsdatum verlopen"`:""}>${dLabel(k.sl)} ${k.sl.slice(0,4)}</td><td class="num">${dLabel(k.op)} ${k.op.slice(0,4)}</td></tr>`).join("")}</tbody></table></div>`)}
+    <h3 style="margin:18px 0 6px">Kansen${lijst.length>=40?" (top 40)":""}</h3><div class="tbl"><table><thead><tr><th>Kans</th><th>Eigenaar</th><th>Fase</th><th class="r">Waarde</th><th class="r">Kans</th><th>Sluiting</th><th>Oplevering</th></tr></thead><tbody>${lijst.map(k=>`<tr><td>${esc(k.n)}</td><td>${esc(k.e)}</td><td>${esc(k.f)}</td><td class="r num">${eur(k.w)}</td><td class="r num">${k.k}%</td><td class="num"${k.v&&!rl?` style="color:var(--bad)" title="Sluitingsdatum verlopen"`:""}>${dLabel(k.sl)} ${k.sl.slice(0,4)}</td><td class="num"${k.v&&rl?` style="color:var(--bad)" title="Opleverdatum verlopen"`:""}>${dLabel(k.op)} ${k.op.slice(0,4)}</td></tr>`).join("")}</tbody></table></div>`)}
 function zonderDetail(){const z=((S.odoo||{}).forecast||{}).zonderDatum||{};
   openDetail("Niet in de forecast",`Deze open kansen missen een sluitingsdatum, een opleverdatum of allebei. Vul ze aan in Odoo, dan tellen ze vanaf het volgende halfuur mee in de forecast.`,
     `<div class="tbl"><table><thead><tr><th>Kans</th><th>Eigenaar</th><th>Fase</th><th class="r">Waarde</th><th>Mist</th></tr></thead><tbody>${(z.lijst||[]).map(k=>`<tr><td>${esc(k.n)}</td><td>${esc(k.e)}</td><td>${esc(k.f)}</td><td class="r num">${eur(k.w)}</td><td>${esc(k.mist)}</td></tr>`).join("")}</tbody></table></div>${(z.aantal||0)>40?`<p class="muted" style="font-size:12px">Top 40 op waarde van ${z.aantal} kansen.</p>`:""}`)}
