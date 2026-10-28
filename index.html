@@ -592,7 +592,7 @@ const TARGET_FIELDS=[
  ["lars_intakes","Lars","Gekwalificeerde intakes"],["lars_intakes_min","Lars","Ondergrens intakes"]];
 const MONTHS=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
 const TABS=["overzicht","leads","intakes","marge","odoo","targets"];
-const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:90,trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
+const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const eur=n=>"€ "+Math.round(n||0).toLocaleString("nl-NL");
@@ -784,7 +784,8 @@ function byPerson(rows,key){const o={};(rows||[]).forEach(r=>{const p=r.e||"Onbe
 function openDetail(title,sub,html){openDrawer("detail",true);$("dr-title").textContent=title;$("detail").innerHTML=(sub?`<p class="muted" style="margin:0 0 14px;font-size:13px">${sub}</p>`:"")+html}
 function odooDetail(k){const o=S.odoo;if(!o)return;
   if(k==="week")return openDetail("Offertes verstuurd deze week",`${o.offertesWeek} offertes · ${eur(o.offertesWeekWaarde)}. Alleen verstuurde en bevestigde offertes, geen concepten.`,byPerson(o.offertesWeekLijst)+oTable(o.offertesWeekLijst));
-  if(k==="fc")return forecastDetail();
+  if(k==="fc2026"||k==="fc2027")return forecastDetail(k.slice(2));
+  if(k==="zonder")return zonderDetail();
   if(k==="orders")return ordersDetail();
   if(k==="port")return openDetail("Offerteportefeuille",`${o.portefeuilleAantal} openstaande verstuurde offertes · ${eur(o.portefeuilleWaarde)}. Concepten tellen niet mee. Per verkoopkans telt alleen de nieuwste offerte.`,byPerson(o.portefeuilleLijst)+oTable(o.portefeuilleLijst)+((o.portefeuilleLijst||[]).length<o.portefeuilleAantal?`<p class="muted" style="font-size:12px">Top ${(o.portefeuilleLijst||[]).length} op bedrag.</p>`:""));
   if(k==="geen")return openDetail("Kansen zonder vervolgactie",`${o.zonderActiviteit} kansen in de pijplijn zonder geplande activiteit in Odoo. Deze vallen tussen wal en schip.`,byPerson(o.zonderActiviteitLijst)+kTable(o.zonderActiviteitLijst,true)+(o.zonderActiviteit>(o.zonderActiviteitLijst||[]).length?`<p class="muted" style="font-size:12px">Eerste ${(o.zonderActiviteitLijst||[]).length} van ${o.zonderActiviteit}. De rest staat in Odoo.</p>`:""));
@@ -794,76 +795,106 @@ function odooDetail(k){const o=S.odoo;if(!o)return;
   if(k.startsWith("act:")){const p=k.slice(4),a=(o.activiteiten||{})[p]||{};const li=arr=>(arr&&arr.length)?`<ul style="margin:6px 0 16px;padding-left:18px;display:grid;gap:4px">${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<div class="empty">Geen.</div>`;
     return openDetail("Activiteiten "+p,`${a.verlopen||0} verlopen · ${a.vandaag||0} voor vandaag.`,`<h3 style="color:var(--bad)">Verlopen</h3>${li(a.verlopenLijst)}<h3>Vandaag</h3>${li(a.vandaagLijst)}${(a.vandaag||0)>(a.vandaagLijst||[]).length?`<p class="muted" style="font-size:12px">Eerste ${(a.vandaagLijst||[]).length} van ${a.vandaag}.</p>`:""}`)}
 }
-/* ---------- Portefeuilles, forecast en trends ---------- */
-const SERIES=[["offerteportefeuille","Offerteportefeuille","#279FDA",""],["forecastOngewogen","Forecast ongewogen","#9CCBEA","6 4"],["forecastGewogen","Forecast gewogen","var(--fg)",""],["orderportefeuille","Orderportefeuille","var(--good)",""]];
+/* ---------- Portefeuilles, forecast en trends (per week) ---------- */
+const SERIES=[
+  ["offerteportefeuille","Offerteportefeuille","#279FDA","","port"],
+  ["orderportefeuille","Orderportefeuille","var(--good)","","orders"],
+  ["fc2026Ong","Forecast 2026 ongewogen","#9CCBEA","6 4","fc2026"],
+  ["fc2026Gew","Forecast 2026 gewogen","#279FDA","","fc2026"],
+  ["fc2027Ong","Forecast 2027 ongewogen","#9CCBEA","6 4","fc2027"],
+  ["fc2027Gew","Forecast 2027 gewogen","#279FDA","","fc2027"]];
+const SER=Object.fromEntries(SERIES.map(s=>[s[0],s]));
 const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return iso_(d)};
 const iso_=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-function trendRows(){
-  // Eén rij per dag: Odoo-trend + laatst bekende orderportefeuille op of voor die dag
+// ISO-weeknummer (maandag t/m zondag)
+function isoWeek(iso){const d=new Date(iso+"T12:00:00");const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day+3);const y=d.getFullYear();const f=new Date(y,0,4);const w=1+Math.round(((d-f)/864e5-3+((f.getDay()+6)%7))/7);return {y,w,key:y+"-W"+pad(w)}}
+const weekMonday=iso=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return iso_(d)};
+const wkLabel=key=>"wk "+(+key.split("-W")[1]);
+function weekRows(n){
+  // n weken terug t/m deze week; per week de laatste stand in die week. Orderportefeuille loopt door tot een nieuwe stand.
+  const today=today_();const thisMon=weekMonday(today);
+  const first=n?addDays(thisMon,-7*(n-1)):weekMonday([...S.trend.map(x=>x.datum),...S.orders.map(x=>x.datum),today].filter(Boolean).sort()[0]);
   const t=[...S.trend].filter(x=>x.datum).sort((a,b)=>a.datum.localeCompare(b.datum));
   const o=[...S.orders].filter(x=>x.datum).sort((a,b)=>a.datum.localeCompare(b.datum));
-  const days=[...new Set([...t.map(x=>x.datum),...o.map(x=>x.datum)])].sort();
-  let ti=0,oi=0,lastT=null,lastO=null;
-  return days.map(d=>{while(ti<t.length&&t[ti].datum<=d)lastT=t[ti++];while(oi<o.length&&o[oi].datum<=d)lastO=o[oi++];
-    return {datum:d,offerteportefeuille:lastT&&lastT.datum===d?lastT.offerteportefeuille:(lastT?lastT.offerteportefeuille:null),
-      forecastOngewogen:lastT?lastT.forecastOngewogen:null,forecastGewogen:lastT?lastT.forecastGewogen:null,orderportefeuille:lastO?+lastO.bedrag:null}});
-}
-function valueOn(rows,key,date){let v=null;for(const r of rows){if(r.datum>date)break;if(r[key]!=null)v=r[key]}return v}
-function deltaHtml(cur,past,label){if(cur==null||past==null)return `<span class="muted">${label}: nog geen vergelijking</span>`;const d=cur-past;const pct=past?Math.round(d/past*100):0;
+  const rows=[];
+  for(let m=first;m<=thisMon;m=addDays(m,7)){const end=addDays(m,6);const wk=isoWeek(m);
+    const inW=t.filter(x=>x.datum>=m&&x.datum<=end);const last=inW[inW.length-1]||null;
+    const lo=o.filter(x=>x.datum<=end).pop();
+    const r={key:wk.key,mon:m,end};
+    for(const k of ["offerteportefeuille","fc2026Ong","fc2026Gew","fc2027Ong","fc2027Gew"])r[k]=last&&last[k]!=null?+last[k]:null;
+    r.orderportefeuille=lo?+lo.bedrag:null;rows.push(r)}
+  return rows}
+function deltaHtml(cur,past,label){if(cur==null||past==null)return `<span class="muted">${label}: nog geen stand</span>`;const d=cur-past;const pct=past?Math.round(d/past*100):0;
   const cls=Math.abs(d)<1?"muted":d>0?"up":"down";return `<span class="dl ${cls}">${d>0?"▲":d<0?"▼":"="} ${eurK(Math.abs(d))}${past?` (${pct>0?"+":""}${pct}%)`:""}</span> <span class="muted">${label}</span>`}
-function spark(rows,key,col){const pts=rows.map((r,i)=>[i,r[key]]).filter(p=>p[1]!=null);if(pts.length<2)return `<div class="muted" style="font-size:11px;height:34px;display:flex;align-items:end">Trend bouwt zich op vanaf vandaag</div>`;
-  const W=200,H=34,xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-  const X=x=>(x-x0)/Math.max(1,x1-x0)*(W-4)+2,Y=y=>H-3-(y-y0)/Math.max(1,y1-y0)*(H-6);
+function spark(rows,key,col){const pts=rows.map((r,i)=>[i,r[key]]).filter(p=>p[1]!=null);if(pts.length<2)return `<div class="muted" style="font-size:11px;height:34px;display:flex;align-items:end">Trend bouwt zich per week op</div>`;
+  const W=200,H=34,ys=pts.map(p=>p[1]);const x1=rows.length-1,y0=Math.min(...ys),y1=Math.max(...ys);
+  const X=x=>x/Math.max(1,x1)*(W-4)+2,Y=y=>H-3-(y-y0)/Math.max(1,y1-y0)*(H-6);
   const d=pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");const last=pts[pts.length-1];
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:34px;display:block" aria-hidden="true"><path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="${X(last[0])}" cy="${Y(last[1])}" r="3" fill="${col}"></circle></svg>`}
-function bigChart(rows){
-  const vis=SERIES.filter(s=>!S.trendHide[s[0]]);const pts=vis.flatMap(s=>rows.map(r=>r[s[0]]).filter(v=>v!=null));
-  if(rows.length<2||!pts.length)return `<div class="empty">De trend wordt elke dag aangevuld. Over een paar dagen zie je hier de lijnen.</div>`;
-  const W=900,H=280,L=64,R=16,T=14,B=30;const max=Math.max(...pts)*1.08,min=0;
-  const X=i=>L+i/(rows.length-1)*(W-L-R),Y=v=>T+(1-(v-min)/(max-min))*(H-T-B);
-  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend portefeuilles en forecast" style="width:100%;height:auto;display:block">`;
+function weekChart(rows,keys,label){
+  const vis=keys.filter(k=>!S.trendHide[k]).map(k=>SER[k]);const pts=vis.flatMap(s=>rows.map(r=>r[s[0]]).filter(v=>v!=null));
+  const W=900,H=220,L=64,R=30,T=12,B=28;const max=(pts.length?Math.max(...pts):1)*1.1||1,min=0;
+  const X=i=>L+(rows.length<2?0.5:i/(rows.length-1))*(W-L-R),Y=v=>T+(1-(v-min)/(max-min))*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)} per week" style="width:100%;height:auto;display:block">`;
   for(let g=0;g<=4;g++){const v=min+(max-min)*g/4,y=Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)"></line><text x="${L-8}" y="${y+4}" text-anchor="end">${eurK(v)}</text>`}
-  const ticks=[0,Math.floor((rows.length-1)/2),rows.length-1];[...new Set(ticks)].forEach(i=>{s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${dLabel(rows[i].datum)}</text>`});
+  const step=Math.max(1,Math.ceil(rows.length/9));rows.forEach((r,i)=>{if(i%step===0||i===rows.length-1)s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${wkLabel(r.key)}</text>`});
   vis.forEach(([k,n,c,dash])=>{const ps=rows.map((r,i)=>[i,r[k]]).filter(p=>p[1]!=null);if(!ps.length)return;
-    s+=`<path d="${ps.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="2.5" ${dash?`stroke-dasharray="${dash}"`:""} stroke-linejoin="round" stroke-linecap="round"></path>`;
-    ps.forEach(p=>{s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="${ps.length>40?1.5:3}" fill="${c}"><title>${n} ${dLabel(rows[p[0]].datum)}: ${eur(p[1])}</title></circle>`})});
-  return s+"</svg>";
-}
+    if(ps.length>1)s+=`<path d="${ps.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="2.5" ${dash?`stroke-dasharray="${dash}"`:""} stroke-linejoin="round" stroke-linecap="round"></path>`;
+    ps.forEach(p=>{s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.5" fill="${c}"><title>${n} ${wkLabel(rows[p[0]].key)}: ${eur(p[1])}</title></circle>`})});
+  if(!pts.length)s+=`<text x="${(L+W-R)/2}" y="${H/2}" text-anchor="middle">Nog geen weekstanden</text>`;
+  return s+"</svg>"}
 function renderPortfolio(o){
-  const all=trendRows();const today=today_();const from=S.trendRange?addDays(today,-S.trendRange):"0000";const rows=all.filter(r=>r.datum>=from);
+  const n=S.trendRange;const rows=weekRows(n);const r8=weekRows(9);
   const latestOrder=[...S.orders].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
-  const f=o&&o.forecast||{};const mStart=today.slice(0,8)+"01";
-  const cur={offerteportefeuille:o?o.portefeuilleWaarde:valueOn(all,"offerteportefeuille",today),forecastOngewogen:f.ongewogen??valueOn(all,"forecastOngewogen",today),forecastGewogen:f.gewogen??valueOn(all,"forecastGewogen",today),orderportefeuille:latestOrder?+latestOrder.bedrag:null};
-  const sub={offerteportefeuille:o?(o.portefeuilleAantal??0)+" open offertes, zonder concepten":"",forecastOngewogen:f.aantal?f.aantal+" open kansen, volle verwachte waarde":"",forecastGewogen:"verwachte waarde × slagingskans per kans",orderportefeuille:latestOrder?"stand per "+dLabel(latestOrder.datum)+(latestOrder.door?" · "+latestOrder.door:""):"nog niet ingevuld"};
-  const det={offerteportefeuille:"port",forecastOngewogen:"fc",forecastGewogen:"fc",orderportefeuille:"orders"};
-  const cards=SERIES.map(([k,n,c])=>`<button class="card click-card pcard" data-od="${det[k]}"><div class="row between"><span class="eyebrow">${n}</span><i class="sw" style="background:${c}"></i></div>
+  const f=o&&o.forecast||{};const J=f.jaren||{};const j26=J["2026"]||{},j27=J["2027"]||{};
+  const cur={offerteportefeuille:o?o.portefeuilleWaarde:null,orderportefeuille:latestOrder?+latestOrder.bedrag:null,fc2026Ong:j26.ongewogen??null,fc2026Gew:j26.gewogen??null,fc2027Ong:j27.ongewogen??null,fc2027Gew:j27.gewogen??null};
+  const sub={offerteportefeuille:o?(o.portefeuilleAantal??0)+" open offertes, zonder concepten":"",orderportefeuille:latestOrder?"stand "+wkLabel(isoWeek(latestOrder.datum).key)+" ("+dLabel(latestOrder.datum)+")"+(latestOrder.door?" · "+latestOrder.door:""):"nog niet ingevuld",
+    fc2026Ong:j26.aantal!=null?j26.aantal+" kansen, volle verwachte waarde":"",fc2026Gew:"verwachte waarde × slagingskans",fc2027Ong:j27.aantal!=null?j27.aantal+" kansen, volle verwachte waarde":"",fc2027Gew:"verwachte waarde × slagingskans"};
+  const prevW=r8[r8.length-2],w8=r8[0];
+  const card=k=>{const [,nm,c,,det]=SER[k];return `<button class="card click-card pcard" data-od="${det}"><div class="row between"><span class="eyebrow">${nm}</span><i class="sw" style="background:${c}"></i></div>
     <div class="stat num">${cur[k]==null?"–":eurK(cur[k])}</div><div class="muted" style="font-size:12px">${sub[k]}</div>
-    ${spark(all.filter(r=>r.datum>=addDays(today,-30)),k,c)}
-    <div class="deltas">${deltaHtml(cur[k],valueOn(all,k,addDays(today,-7)),"t.o.v. 7 dagen")}<br>${deltaHtml(cur[k],valueOn(all,k,addDays(mStart,-1)),"t.o.v. eind vorige maand")}</div></button>`).join("");
-  const canOrder=S.canEdit;
+    ${spark(r8,k,c)}
+    <div class="deltas">${deltaHtml(cur[k],prevW&&prevW[k],"t.o.v. vorige week ("+wkLabel(prevW.key)+")")}<br>${deltaHtml(cur[k],w8&&w8[k],"t.o.v. 8 weken terug ("+wkLabel(w8.key)+")")}</div></button>`};
+  const z=f.zonderDatum;
+  const legend=keys=>`<div class="legend tr-leg">${keys.map(k=>{const[,nm,c,dash]=SER[k];return `<button type="button" class="lg${S.trendHide[k]?" off":""}" data-k="${k}"><i style="background:${c}${dash?";opacity:.7":""}"></i>${nm.replace(/^Forecast \d{4} /,"")}</button>`}).join("")}</div>`;
+  const chartCard=(title,keys)=>`<div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:6px"><h3>${title}</h3>${legend(keys)}</div><div class="chart">${weekChart(rows,keys,title)}</div></div>`;
+  const thisWk=isoWeek(today_());
   return `<section style="display:grid;gap:16px">
-    <div class="ph"><div><div class="eyebrow">Portefeuilles en forecast</div><h2>Wat ligt er en wat komt er aan</h2></div>
-      <div class="seg" id="tr-range">${[[30,"30 dagen"],[90,"90 dagen"],[0,"Alles"]].map(([v,l])=>`<button type="button" data-r="${v}" aria-pressed="${S.trendRange===v}">${l}</button>`).join("")}</div></div>
-    <div class="grid4">${cards}</div>
-    <div class="card"><div class="row between" style="margin-bottom:8px"><h3>Trend</h3><div class="legend" id="tr-leg">${SERIES.map(([k,n,c,dash])=>`<button type="button" class="lg${S.trendHide[k]?" off":""}" data-k="${k}"><i style="background:${c}${dash?";opacity:.7":""}"></i>${n}</button>`).join("")}</div></div>
-      <div class="chart">${bigChart(rows)}</div>
-      <p class="muted" style="font-size:12px;margin:8px 0 0">Elke dag wordt de stand van Odoo vastgelegd. De forecast gewogen wordt bijgehouden vanaf 28 oktober. Klik op een lijn in de legenda om hem aan of uit te zetten.</p></div>
-    ${canOrder?`<div class="card"><h3>Orderportefeuille bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Totale bruto marge van getekende opdrachten die nog uitgevoerd moeten worden. Vul hem elke week in, bijvoorbeeld op maandag.</p>
-      <form class="f" id="ord-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Stand per<input id="ord-datum" type="date" required value="${today}"></label><label>Orderportefeuille (€)<input id="ord-bedrag" type="number" min="0" step="1000" required></label><label class="full">Notitie<input id="ord-notitie" placeholder="Bijvoorbeeld: incl. Axon en BASE"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>`:""}
+    <div class="ph"><div><div class="eyebrow">Portefeuilles en forecast · week ${thisWk.w}</div><h2>Wat ligt er en wat komt er aan</h2></div>
+      <div class="seg" id="tr-range">${[[8,"8 weken"],[13,"13 weken"],[26,"26 weken"],[0,"Alles"]].map(([v,l])=>`<button type="button" data-r="${v}" aria-pressed="${S.trendRange===v}">${l}</button>`).join("")}</div></div>
+    <div class="eyebrow">Portefeuilles</div>
+    <div class="grid2">${card("offerteportefeuille")}${card("orderportefeuille")}</div>
+    <div class="eyebrow" style="margin-top:6px">Forecast 2026</div>
+    <div class="grid2">${card("fc2026Ong")}${card("fc2026Gew")}</div>
+    <div class="eyebrow" style="margin-top:6px">Forecast 2027</div>
+    <div class="grid2">${card("fc2027Ong")}${card("fc2027Gew")}</div>
+    ${z&&z.aantal?`<button class="card click-card" data-od="zonder" style="text-align:left;border-color:var(--warn,#E0A100)"><div class="row between"><span class="eyebrow">Niet in de forecast</span><span class="muted" style="font-size:12px">bekijk lijst</span></div>
+      <div style="font-size:15px;margin-top:4px"><b>${z.aantal} open kansen (${eurK(z.waarde)})</b> missen een sluitingsdatum of opleverdatum en tellen daarom niet mee.</div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${Object.entries(z.perPersoon||{}).sort((a,b)=>b[1]-a[1]).map(([p,c])=>esc(p)+" "+c).join(" · ")}</div></button>`:""}
+    <div style="display:grid;gap:16px">${chartCard("Portefeuilles per week",["offerteportefeuille","orderportefeuille"])}${chartCard("Forecast 2026 per week",["fc2026Ong","fc2026Gew"])}${chartCard("Forecast 2027 per week",["fc2027Ong","fc2027Gew"])}</div>
+    <p class="muted" style="font-size:12px;margin:-4px 0 0">Per week telt de laatste stand van die week. De forecast telt alleen kansen met een sluitingsdatum én opleverdatum in Odoo; het jaar volgt uit de sluitingsdatum. Weekstanden van de forecast lopen vanaf week 44.</p>
+    ${S.canEdit?`<div class="card"><h3>Orderportefeuille bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Totale bruto marge van getekende opdrachten die nog uitgevoerd moeten worden. Vul hem elke week in, bijvoorbeeld op maandag. De week wordt uit de datum bepaald.</p>
+      <form class="f" id="ord-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Stand per<input id="ord-datum" type="date" required value="${today_()}"></label><label>Orderportefeuille (€)<input id="ord-bedrag" type="number" min="0" step="1000" required></label><label class="full">Notitie<input id="ord-notitie" placeholder="Bijvoorbeeld: incl. Axon en BASE"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>`:""}
   </section>`;
 }
 function today_(){return today()}
-function forecastDetail(){const o=S.odoo||{};const f=o.forecast||{};
-  const tbl=(obj,keyName)=>`<div class="tbl"><table><thead><tr><th>${keyName}</th><th class="r">Kansen</th><th class="r">Ongewogen</th><th class="r">Gewogen</th></tr></thead><tbody>${Object.entries(obj||{}).sort((a,b)=>b[1].gewogen-a[1].gewogen).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="r num">${v.aantal}</td><td class="r num">${eur(v.ongewogen)}</td><td class="r num"><b>${eur(v.gewogen)}</b></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num">${f.aantal??""}</td><td class="r num"><b>${eur(f.ongewogen)}</b></td><td class="r num"><b>${eur(f.gewogen)}</b></td></tr></tbody></table></div>`;
-  openDetail("Forecast",`Alle open kansen in Lead, Inventarisatie, Follow-up, Offerte en Getekend onder voorbehoud. Ongewogen = de volle verwachte opbrengst in Odoo. Gewogen = verwachte opbrengst keer de slagingskans. Let op: dit is de verwachte opbrengst zoals in Odoo ingevuld, niet de bruto marge.`,
-    `<h3 style="margin-bottom:6px">Per fase</h3>${tbl(FASES.reduce((a,fz)=>{if(f.perFase&&f.perFase[fz])a[fz]=f.perFase[fz];return a},{}),"Fase")}<h3 style="margin:18px 0 6px">Per persoon</h3>${tbl(f.perPersoon,"Eigenaar")}`)}
+function fcTbl(obj,keyName,tot){return `<div class="tbl"><table><thead><tr><th>${keyName}</th><th class="r">Kansen</th><th class="r">Ongewogen</th><th class="r">Gewogen</th></tr></thead><tbody>${Object.entries(obj||{}).sort((a,b)=>b[1].gewogen-a[1].gewogen).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="r num">${v.aantal}</td><td class="r num">${eur(v.ongewogen)}</td><td class="r num"><b>${eur(v.gewogen)}</b></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num">${tot.aantal??""}</td><td class="r num"><b>${eur(tot.ongewogen)}</b></td><td class="r num"><b>${eur(tot.gewogen)}</b></td></tr></tbody></table></div>`}
+function forecastDetail(y){const f=(S.odoo||{}).forecast||{};const J=(f.jaren||{})[y]||{};
+  const perFase=FASES.reduce((a,fz)=>{if(J.perFase&&J.perFase[fz])a[fz]=J.perFase[fz];return a},{});
+  const lijst=(J.lijst||[]);
+  openDetail("Forecast "+y,`Open kansen met een sluitingsdatum in ${y==="2026"?"2026 (of eerder, dan is de datum verlopen)":y} én een opleverdatum. Ongewogen = volle verwachte opbrengst in Odoo, gewogen = keer de slagingskans. Dit is de verwachte opbrengst zoals in Odoo ingevuld, niet de bruto marge.${J.verlopen?` <b>${J.verlopen} kans${J.verlopen>1?"en hebben":" heeft"} een verlopen sluitingsdatum.</b>`:""}`,
+    `<h3 style="margin-bottom:6px">Per fase</h3>${fcTbl(perFase,"Fase",J)}<h3 style="margin:18px 0 6px">Per persoon</h3>${fcTbl(J.perPersoon,"Eigenaar",J)}
+    <h3 style="margin:18px 0 6px">Kansen${lijst.length>=40?" (top 40)":""}</h3><div class="tbl"><table><thead><tr><th>Kans</th><th>Eigenaar</th><th>Fase</th><th class="r">Waarde</th><th class="r">Kans</th><th>Sluiting</th><th>Oplevering</th></tr></thead><tbody>${lijst.map(k=>`<tr><td>${esc(k.n)}</td><td>${esc(k.e)}</td><td>${esc(k.f)}</td><td class="r num">${eur(k.w)}</td><td class="r num">${k.k}%</td><td class="num"${k.v?` style="color:var(--bad)" title="Sluitingsdatum verlopen"`:""}>${dLabel(k.sl)} ${k.sl.slice(0,4)}</td><td class="num">${dLabel(k.op)} ${k.op.slice(0,4)}</td></tr>`).join("")}</tbody></table></div>`)}
+function zonderDetail(){const z=((S.odoo||{}).forecast||{}).zonderDatum||{};
+  openDetail("Niet in de forecast",`Deze open kansen missen een sluitingsdatum, een opleverdatum of allebei. Vul ze aan in Odoo, dan tellen ze vanaf het volgende halfuur mee in de forecast.`,
+    `<div class="tbl"><table><thead><tr><th>Kans</th><th>Eigenaar</th><th>Fase</th><th class="r">Waarde</th><th>Mist</th></tr></thead><tbody>${(z.lijst||[]).map(k=>`<tr><td>${esc(k.n)}</td><td>${esc(k.e)}</td><td>${esc(k.f)}</td><td class="r num">${eur(k.w)}</td><td>${esc(k.mist)}</td></tr>`).join("")}</tbody></table></div>${(z.aantal||0)>40?`<p class="muted" style="font-size:12px">Top 40 op waarde van ${z.aantal} kansen.</p>`:""}`)}
 function ordersDetail(){const rows=[...S.orders].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));
-  openDetail("Orderportefeuille",`Handmatig bijgehouden stand per week. Alleen Stijn, Sil, Timo en Jeroen kunnen dit invullen.`,rows.length?`<div class="tbl"><table><thead><tr><th>Stand per</th><th class="r">Orderportefeuille</th><th class="r">Verschil</th><th>Door</th><th>Notitie</th></tr></thead><tbody>${rows.map((r,i)=>{const prev=rows[i+1];const d=prev?(+r.bedrag)-(+prev.bedrag):null;return `<tr><td class="num">${dLabel(r.datum)}</td><td class="r num"><b>${eur(r.bedrag)}</b></td><td class="r num" style="color:${d>0?"var(--good)":d<0?"var(--bad)":"inherit"}">${d==null?"":(d>0?"+":"")+eurK(d)}</td><td>${esc(r.door||"")}</td><td class="muted">${esc(r.notitie||"")}</td></tr>`}).join("")}</tbody></table></div>`:`<div class="empty">Nog geen stand ingevuld.</div>`)}
+  openDetail("Orderportefeuille",`Handmatig bijgehouden stand per week. Alleen Stijn, Sil, Timo en Jeroen kunnen dit invullen.`,rows.length?`<div class="tbl"><table><thead><tr><th>Week</th><th>Stand per</th><th class="r">Orderportefeuille</th><th class="r">Verschil</th><th>Door</th><th>Notitie</th></tr></thead><tbody>${rows.map((r,i)=>{const prev=rows[i+1];const d=prev?(+r.bedrag)-(+prev.bedrag):null;return `<tr><td class="num">${wkLabel(isoWeek(r.datum).key)}</td><td class="num">${dLabel(r.datum)}</td><td class="r num"><b>${eur(r.bedrag)}</b></td><td class="r num" style="color:${d>0?"var(--good)":d<0?"var(--bad)":"inherit"}">${d==null?"":(d>0?"+":"")+eurK(d)}</td><td>${esc(r.door||"")}</td><td class="muted">${esc(r.notitie||"")}</td></tr>`}).join("")}</tbody></table></div>`:`<div class="empty">Nog geen stand ingevuld.</div>`)}
 document.addEventListener("click",e=>{const r=e.target.closest("#tr-range button");if(r){S.trendRange=+r.dataset.r;renderOdoo();return}
-  const l=e.target.closest("#tr-leg .lg");if(l){S.trendHide[l.dataset.k]=!S.trendHide[l.dataset.k];renderOdoo()}});
+  const l=e.target.closest(".tr-leg .lg");if(l){S.trendHide[l.dataset.k]=!S.trendHide[l.dataset.k];renderOdoo()}});
 document.addEventListener("submit",async e=>{if(e.target.id!=="ord-form")return;e.preventDefault();
   const d={datum:$("ord-datum").value,bedrag:+$("ord-bedrag").value||0,notitie:$("ord-notitie").value.trim(),door:(S.meName||"").split(" ")[0],createdAt:new Date().toISOString()};
-  if(await save("orderportefeuille",d.datum,d))toast("Orderportefeuille opgeslagen")});
+  if(await save("orderportefeuille",d.datum,d))toast("Orderportefeuille opgeslagen voor "+wkLabel(isoWeek(d.datum).key))});
 
 function renderOdoo(){
   const o=S.odoo,el=$("odoo");
