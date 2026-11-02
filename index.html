@@ -373,6 +373,23 @@ nav.menu button[aria-current="page"]{background:linear-gradient(90deg,rgba(39,15
 .shake2{animation:shake .45s}
 /* ---------- Mobile ---------- */
 nav.bottom{display:none}
+nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F7A8F;font-weight:700;padding:14px 12px 4px}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:-6px 0 2px}
+.subnav button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 14px;font:600 13px var(--font);cursor:pointer}
+.subnav button[aria-current="page"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.trechter{display:grid;gap:6px;justify-items:center;padding:6px 0}
+.trechter .lvl{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fff;padding:14px 22px;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,22px 100%);min-height:64px;box-sizing:border-box}
+.trechter .lvl .nm{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;opacity:.9}
+.trechter .lvl .v{font-size:28px;font-weight:800;line-height:1}
+.trechter .cv{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.trechter .cv b{font-size:13px;color:var(--fg)}
+.trechter .cv .pill{border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px}
+.pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
+.alertc{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--bad);background:var(--badbg);border-radius:14px;padding:14px 16px}
+.alertc.ok{border-color:var(--good);background:var(--goodbg)}
+.alertc .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);margin-top:5px;flex:none}
+.alertc.ok .dot{background:var(--good)}
+.alertc ul{margin:6px 0 0;padding-left:18px}
 @media (max-width:1100px){.people{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:900px){
   aside.side{display:none}
@@ -386,7 +403,7 @@ nav.bottom{display:none}
   .hello{display:none}
   select.month{background:var(--navy2);color:#fff;border-color:var(--navyline);padding:7px 6px;font-size:12px;min-width:0}
   .topbar .avatar{width:30px;height:30px}
-  nav.bottom{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--navy);z-index:20;padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  nav.bottom{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--navy);z-index:20;padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
   nav.bottom button{background:none;border:0;color:#A9BBC9;display:grid;justify-items:center;gap:2px;font-size:10px;font-weight:500;padding:6px 0;cursor:pointer;min-width:0}
   nav.bottom button svg{width:20px;height:20px}
   nav.bottom button[aria-current="page"]{color:#fff}
@@ -419,10 +436,14 @@ nav.bottom{display:none}
   <div class="brand"><img src="logo.png" alt="Fitness Aannemer"><span class="os">COCKPIT</span></div>
   <nav class="menu" id="menu" aria-label="Onderdelen">
     <button data-t="overzicht"><svg><use href="#i-home"/></svg>Overzicht</button>
-    <button data-t="leads"><svg><use href="#i-leads"/></svg>Leads<span class="cnt" id="c-leads">0</span></button>
+    <div class="grp">Marketing</div>
+    <button data-t="leads"><svg><use href="#i-leads"/></svg>Leads &amp; bronnen<span class="cnt" id="c-leads">0</span></button>
+    <button data-t="kosten"><svg><use href="#i-euro"/></svg>Kosten &amp; rendement</button>
+    <div class="grp">Sales</div>
     <button data-t="intakes"><svg><use href="#i-intake"/></svg>Intakes<span class="cnt" id="c-intakes">0</span></button>
     <button data-t="marge"><svg><use href="#i-euro"/></svg>Bruto marge</button>
     <button data-t="odoo"><svg><use href="#i-odoo"/></svg>Offertes &amp; pijplijn</button>
+    <div class="grp">Beheer</div>
     <button data-t="targets"><svg><use href="#i-target"/></svg>Targets</button>
   </nav>
   <span class="sp"></span>
@@ -449,6 +470,8 @@ nav.bottom{display:none}
         <div><div class="eyebrow" id="hero-eye">Stand van zaken</div><h1 id="hero-h">Even laden…</h1><p id="hero-p"></p></div>
         <div class="clock" id="clock"></div>
       </div>
+      <div class="card"><div class="row between" style="flex-wrap:wrap;gap:8px"><div><div class="eyebrow">Van lead tot realisatie</div><h2 style="margin:2px 0 0">Funnel</h2></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div>
+        <div class="grid2" style="margin-top:12px;align-items:center"><div id="trechter"></div><div id="bron-alert-ov"></div></div></div>
       <div class="funnel" id="funnel"></div>
       <div class="diag" id="diag"></div>
       <div>
@@ -462,15 +485,32 @@ nav.bottom{display:none}
     </section>
 
     <section data-p="leads" hidden>
-      <div class="ph"><div><div class="eyebrow">Stap 1 · funnel</div><h1>Leads</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
+      <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Leads &amp; bronnen</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
+      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button></div>
+      <div id="bron-alert"></div>
       <div class="grid4" id="lead-kpis"></div>
+      <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Funnel per bron</h3><div class="muted" style="font-size:12px">Van lead naar intake, voortraject en realisatie. Rood = loopt het verst achter op de rest.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="bron-funnel" class="tbl" style="margin-top:8px"></div></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Per bron</h3><div class="muted" style="font-size:12px">Waar de leads vandaan komen. Hierop sturen we wat we opschalen.</div></div><div class="seg" id="bron-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="lead-bron" class="tbl" style="margin-top:8px"></div></div>
       <div class="card chart"><div class="row between" style="margin-bottom:8px"><h3 id="lead-chart-t">Per dag</h3><div class="legend" id="lead-legend"></div></div><div id="lead-chart"></div></div>
       <div class="card tbl" id="lead-table"></div>
     </section>
 
+    <section data-p="kosten" hidden>
+      <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Kosten &amp; rendement</h1></div></div>
+      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button></div>
+      <div class="grid4" id="ks-kpis"></div>
+      <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Wat kost het en wat levert het op</h3><div class="muted" style="font-size:12px">Per bron: kosten tegenover leads, intakes, voortrajecten, realisaties en bruto marge.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="ks-table" class="tbl" style="margin-top:8px"></div></div>
+      <div class="grid2">
+        <div class="card" id="ks-form-card"></div>
+        <div class="card"><div class="row between"><h3>Exact Online</h3><span class="status none">Nog niet gekoppeld</span></div>
+          <p class="muted" style="font-size:13px;margin:8px 0 0">Straks halen we de marketingkosten automatisch uit Exact: per grootboekrekening of kostenplaats, elke dag ververst. Per regel kies je één keer bij welke bron hij hoort (bijvoorbeeld Meta ads, Google Ads, fotograaf onder Algemeen). Tot die tijd vul je de kosten hier met de hand in; geïmporteerde regels krijgen het label Exact en kunnen hier niet bewerkt worden.</p></div>
+      </div>
+      <div class="card tbl" id="ks-list"></div>
+    </section>
+
     <section data-p="intakes" hidden>
-      <div class="ph"><div><div class="eyebrow">Stap 2 · funnel</div><h1>Intakes</h1></div><button class="btn primary" data-new="intake"><svg><use href="#i-plus"/></svg>Intake toevoegen</button></div>
+      <div class="ph"><div><div class="eyebrow">Sales</div><h1>Intakes</h1></div><button class="btn primary" data-new="intake"><svg><use href="#i-plus"/></svg>Intake toevoegen</button></div>
+      <div class="subnav" data-g="sales"><button data-t="intakes">Intakes</button><button data-t="marge">Bruto marge</button><button data-t="odoo">Offertes &amp; pijplijn</button></div>
       <div class="grid2">
         <div class="card"><h3>Per persoon</h3><div id="int-people" style="margin-top:10px"></div></div>
         <div class="card"><h3>Uitkomst</h3><div id="int-uitkomst" style="margin-top:10px"></div></div>
@@ -479,7 +519,8 @@ nav.bottom{display:none}
     </section>
 
     <section data-p="marge" hidden>
-      <div class="ph"><div><div class="eyebrow">Stap 3 en 4 · funnel</div><h1>Bruto marge</h1></div><button class="btn primary" data-new="marge"><svg><use href="#i-plus"/></svg>Deal toevoegen</button></div>
+      <div class="ph"><div><div class="eyebrow">Sales</div><h1>Bruto marge</h1></div><button class="btn primary" data-new="marge"><svg><use href="#i-plus"/></svg>Deal toevoegen</button></div>
+      <div class="subnav" data-g="sales"><button data-t="intakes">Intakes</button><button data-t="marge">Bruto marge</button><button data-t="odoo">Offertes &amp; pijplijn</button></div>
       <div class="grid2">
         <div class="card"><h3>Per persoon</h3><div id="mg-people" style="margin-top:10px"></div></div>
         <div class="card"><h3>Per soort</h3><div id="mg-soort" style="margin-top:10px"></div></div>
@@ -488,7 +529,8 @@ nav.bottom{display:none}
     </section>
 
     <section data-p="odoo" hidden>
-      <div class="ph"><div><div class="eyebrow">Uit Odoo · elk half uur ververst</div><h1>Offertes &amp; pijplijn</h1></div></div>
+      <div class="ph"><div><div class="eyebrow">Sales · uit Odoo, elk half uur ververst</div><h1>Offertes &amp; pijplijn</h1></div></div>
+      <div class="subnav" data-g="sales"><button data-t="intakes">Intakes</button><button data-t="marge">Bruto marge</button><button data-t="odoo">Offertes &amp; pijplijn</button></div>
       <div id="odoo"></div>
     </section>
 
@@ -505,10 +547,8 @@ nav.bottom{display:none}
 
 <nav class="bottom" id="bottom" aria-label="Onderdelen">
   <button data-t="overzicht"><svg><use href="#i-home"/></svg>Overzicht</button>
-  <button data-t="leads"><svg><use href="#i-leads"/></svg>Leads</button>
-  <button data-t="intakes"><svg><use href="#i-intake"/></svg>Intakes</button>
-  <button data-t="marge"><svg><use href="#i-euro"/></svg>Marge</button>
-  <button data-t="odoo"><svg><use href="#i-odoo"/></svg>Odoo</button>
+  <button data-t="leads" data-g="marketing"><svg><use href="#i-leads"/></svg>Marketing</button>
+  <button data-t="intakes" data-g="sales"><svg><use href="#i-intake"/></svg>Sales</button>
   <button data-t="targets"><svg><use href="#i-target"/></svg>Targets</button>
 </nav>
 
@@ -525,7 +565,7 @@ nav.bottom{display:none}
     <label>Ingepland door<select id="if-door"><option>Stijn</option><option>Lars</option><option>Kevin</option><option>Timo</option></select></label>
     <label>Datum ingepland<input id="if-ingepland" type="date" required></label>
     <label>Datum afspraak<input id="if-afspraak" type="date"></label>
-    <label>Bron<select id="if-bron"><option></option><option>Website</option><option>Koude mail</option><option>LinkedIn</option><option>Koud bellen</option><option>Instagram</option><option>E-book</option><option>Netwerk</option><option>Beurs</option><option>Inkomend belletje</option></select></label>
+    <label>Bron<select id="if-bron"></select></label>
     <label>Budget (€)<input id="if-budget" type="number" min="0" step="1000"></label>
     <label>m²<input id="if-m2" type="number" min="0"></label>
     <label>Pand<select id="if-pand"><option></option><option>Pand op het oog</option><option>Pand getekend</option><option>Bestaande locatie</option><option>Nog geen pand</option></select></label>
@@ -589,8 +629,9 @@ const TARGET_FIELDS=[
  ["kevin_intakes","Kevin","Intakes"],["kevin_bruto","Kevin","Bruto marge (€)"],["kevin_bruto_min","Kevin","Ondergrens bruto marge (€)"],
  ["lars_intakes","Lars","Gekwalificeerde intakes"],["lars_intakes_min","Lars","Ondergrens intakes"]];
 const MONTHS=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-const TABS=["overzicht","leads","intakes","marge","odoo","targets"];
-const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,bronRange:"m",trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
+const TABS=["overzicht","leads","kosten","intakes","marge","odoo","targets"];
+const GROEP={leads:"marketing",kosten:"marketing",intakes:"sales",marge:"sales",odoo:"sales"};
+const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,bronRange:"m",kosten:[],trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const eur=n=>"€ "+Math.round(n||0).toLocaleString("nl-NL");
@@ -711,7 +752,7 @@ function renderFeed(){
 /* ---------- Leads ---------- */
 const TYPE_COL={"Offerteaanvraag":"#279FDA","E-book":"#9CCBEA","Overige aanvraag":"var(--fg)"};
 // Bron van een lead: UTM-bron + medium uit Odoo; zonder UTM de Leadbron/het kanaal dat het team invulde.
-const BRON_NAAM={google:"Google",bing:"Bing",youtube:"YouTube","chatgpt.com":"ChatGPT",chatgpt:"ChatGPT",linkedin:"LinkedIn",tiktok:"TikTok",direct:"Direct (website)",email:"E-mail",newsletter:"Nieuwsbrief"};
+const BRON_NAAM={google:"Google",bing:"Bing",youtube:"YouTube","youtube.com":"YouTube",gemini:"Gemini","perplexity":"Perplexity","chatgpt.com":"ChatGPT",chatgpt:"ChatGPT",linkedin:"LinkedIn",tiktok:"TikTok",direct:"Direct (website)",email:"E-mail",newsletter:"Nieuwsbrief"};
 function bronVan(l){const src=String(l.bron||"").toLowerCase().trim(),med=String(l.medium||"").toLowerCase().trim();const ads=/^(ads|paid|cpc|ppc|paid_social|social_paid)$/.test(med);
   if(src==="facebook"||src==="instagram"||src==="meta"||src==="fb"||src==="ig"){if(ads)return "Meta ads";return (src==="facebook"||src==="fb"?"Facebook":"Instagram")+(med==="bio"?" bio":" organisch")}
   if(src==="google")return ads?"Google Ads":"Google organisch";
@@ -719,6 +760,92 @@ function bronVan(l){const src=String(l.bron||"").toLowerCase().trim(),med=String
   const hand=String(l.leadbron||l.kanaal||"").trim();
   if(hand&&!/^website$/i.test(hand)&&!/^ebook/i.test(hand))return hand.replace(/ \(.*\)$/,"");
   return "Onbekend (geen bron)"}
+/* ---------- Funnel, bronnen, kosten en rendement ---------- */
+const BRON_OPTIES=["Meta ads","Google organisch","Google Ads","Instagram organisch","Instagram bio","Instagram volgend","Facebook organisch","YouTube","ChatGPT","Bing","Direct (website)","LinkedIn","TikTok","Netwerk","Aanbeveling","Inkomend belletje","Beurs","Koud bellen","Koude mail","Onbekend (geen bron)"];
+const KOSTEN_BRONNEN=["Meta ads","Google Ads","LinkedIn","TikTok","YouTube","Beurs","Koude mail","Algemeen marketing",...BRON_OPTIES.filter(b=>!["Meta ads","Google Ads","LinkedIn","TikTok","YouTube","Beurs","Koude mail","Onbekend (geen bron)"].includes(b))];
+const UITGAAND=new Set(["Koud bellen","Koude mail"]);
+const STOPW=new Set("gyms sportschool sportcentrum studio fitness voortraject realisatie design materiaal directe handel website ebook starten pilates boutique verkoopkans club health personal training performance group".split(" "));
+const tokens=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!STOPW.has(w));
+function gedeeld(a,b){const A=new Set(tokens(a));return new Set(tokens(b).filter(w=>A.has(w))).size}
+function lijkt(a,b){return gedeeld(a,b)>=1}
+const OUD_BRON={"Instagram":"Instagram organisch","LinkedIn":"LinkedIn","Netwerk":"Netwerk","Beurs":"Beurs","Inkomend belletje":"Inkomend belletje","Koud bellen":"Koud bellen","Koude mail":"Koude mail"};
+// Bron van een intake: wat het team koos; bij een oude of vage keuze (Website, E-book) de bron van de lead met dezelfde naam.
+function intakeBron(i){const b=String(i.bron||"").trim();
+  if(BRON_OPTIES.includes(b)&&b!=="Onbekend (geen bron)")return b;
+  // E-bookleads hebben vaak alleen een voornaam: daar zijn twee gedeelde woorden nodig, bij aanvragen is één onderscheidend woord genoeg
+  const l=S.leads.find(l=>l.type!=="E-book"&&lijkt(l.naam,i.klant))||S.leads.find(l=>l.type==="E-book"&&gedeeld(l.naam,i.klant)>=2);
+  if(l)return bronVan(l);
+  return OUD_BRON[b]||"Onbekend (geen bron)"}
+// Bron van een deal: via de intake met dezelfde klantnaam
+function margeBron(x){const i=S.intakes.find(i=>lijkt(i.klant,x.deal));return i?intakeBron(i):"Onbekend (geen bron)"}
+function periode(){const m=S.month,j=S.bronRange==="j";return {j,m,label:j?"januari t/m "+monthLabel(m):monthLabel(m),in:d=>{d=String(d||"").slice(0,7);return j?(d.slice(0,4)===m.slice(0,4)&&d<=m):d===m}}}
+function funnelData(){const P=periode();
+  const L=S.leads.filter(l=>P.in(l.datum)),I=S.intakes.filter(i=>P.in(i.datumIngepland||i.createdAt)),M=S.marge.filter(x=>P.in(x.datum));
+  return {P,L,I,M,V:M.filter(x=>x.soort==="Voortraject"),R:M.filter(x=>x.soort==="Realisatie")}}
+const pct=(a,b)=>b?Math.round(a/b*100):null;
+const pctS=(a,b)=>{const p=b?a/b*100:null;return p==null?"–":(p<10&&p>0?(Math.round(p*10)/10).toLocaleString("nl-NL"):Math.round(p))+"%"};
+function bronRijen(F){const T={};const r=b=>T[b]=T[b]||{bron:b,l:0,i:0,v:0,r:0,marge:0,kosten:0};
+  F.L.forEach(l=>r(bronVan(l)).l++);F.I.forEach(i=>r(intakeBron(i)).i++);
+  F.V.forEach(x=>r(margeBron(x)).v++);F.R.forEach(x=>r(margeBron(x)).r++);F.M.forEach(x=>r(margeBron(x)).marge+=(+x.bedrag||0));
+  S.kosten.filter(k=>F.P.in(k.maand)).forEach(k=>r(k.bron||"Algemeen marketing").kosten+=(+k.bedrag||0));
+  return Object.values(T)}
+// Achterstand per bron: hoeveel intakes een bron mist als hij net zo goed zou converteren als het gemiddelde van de inkomende bronnen.
+function achterstand(F){const rows=bronRijen(F).filter(r=>r.l>0&&!UITGAAND.has(r.bron));
+  const L=rows.reduce((a,r)=>a+r.l,0),I=rows.reduce((a,r)=>a+r.i,0);const gem=L?I/L:0;
+  const out=rows.filter(r=>r.l>=5&&r.bron!=="Onbekend (geen bron)").map(r=>({...r,conv:r.i/r.l,mist:gem*r.l-r.i})).filter(r=>r.mist>=1).sort((a,b)=>b.mist-a.mist);
+  // Volume: deze maand (doorgetrokken naar de hele maand) tegenover het gemiddelde van de 3 maanden ervoor
+  const daling=[];if(!F.P.j){const m=F.P.m,f=Math.max(frac(m),.1);const prev=[1,2,3].map(k=>{const d=new Date(m+"-15");d.setMonth(d.getMonth()-k);return iso(d).slice(0,7)});
+    const per={};S.leads.forEach(l=>{const mm=ym(l.datum);const b=bronVan(l);if(b==="Onbekend (geen bron)")return;per[b]=per[b]||{nu:0,oud:0};if(mm===m)per[b].nu++;else if(prev.includes(mm))per[b].oud++});
+    Object.entries(per).forEach(([b,v])=>{const avg=v.oud/3,proj=v.nu/f;if(avg>=3&&proj<avg*.6)daling.push({bron:b,nu:v.nu,avg,proj})});daling.sort((a,b)=>(a.proj/a.avg)-(b.proj/b.avg))}
+  return {gem,lijst:out,ergste:out[0]||null,daling}}
+function alertHtml(F){const A=achterstand(F);
+  if(!A.ergste&&!A.daling.length)return `<div class="alertc ok"><span class="dot"></span><div><b>Geen bron loopt duidelijk achter</b><div class="muted" style="font-size:13px">Gemiddeld wordt ${pctS(A.gem,1)} van de leads een intake (${esc(F.P.label)}).</div></div></div>`;
+  const e=A.ergste;const items=[];
+  if(e)items.push(`<b>${esc(e.bron)}</b> loopt het verst achter: ${e.l} leads, ${e.i} intake${e.i===1?"":"s"} (${pctS(e.i,e.l)}) tegen ${pctS(A.gem,1)} gemiddeld. Dat zijn ongeveer <b>${Math.round(e.mist)} intakes</b> minder dan je zou verwachten.`);
+  A.lijst.slice(1,3).forEach(r=>items.push(`${esc(r.bron)}: ${r.l} leads, ${r.i} intakes (${pctS(r.i,r.l)}), ongeveer ${Math.round(r.mist)} intakes te weinig.`));
+  A.daling.slice(0,2).forEach(d=>items.push(`${esc(d.bron)} levert minder leads op: ${d.nu} deze maand, op weg naar ${Math.round(d.proj)} tegen gemiddeld ${fmt1(d.avg)} in de 3 maanden ervoor.`));
+  return `<div class="alertc"><span class="dot"></span><div><b>Bron achter · ${esc(F.P.label)}</b><ul>${items.map(x=>`<li>${x}</li>`).join("")}</ul></div></div>`}
+function trechterHtml(F){
+  const lv=[["Leads",F.L.length,"#0D1B26"],["Intakes",F.I.length,"#164A6B"],["Voortrajecten",F.V.length,"#1F78A8"],["Realisaties",F.R.length,"#279FDA"]];
+  const W=[100,80,62,46];let h="";
+  lv.forEach(([n,v,c],i)=>{
+    if(i>0){const p=pct(v,lv[i-1][1]);h+=`<div class="cv"><span aria-hidden="true">↓</span><span class="pill none">${pctS(v,lv[i-1][1])}</span> van ${lv[i-1][0].toLowerCase()} naar ${n.toLowerCase()}</div>`}
+    h+=`<div class="lvl" style="width:${W[i]}%;background:${c}"><span class="nm">${n}</span><span class="v num">${fmtN(v)}</span></div>`});
+  h+=`<div class="cv" style="margin-top:4px">Van lead naar realisatie: <b>${pctS(F.R.length,F.L.length)}</b> · bruto marge ${eurK(F.M.reduce((a,x)=>a+(+x.bedrag||0),0))}</div>`;
+  return `<div class="trechter" role="img" aria-label="Funnel: ${lv.map(x=>x[0]+" "+x[1]).join(", ")}">${h}</div>`}
+function renderFunnel(){const F=funnelData();
+  document.querySelectorAll(".fun-range button,#bron-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===F.P.j)));
+  $("trechter").innerHTML=trechterHtml(F);
+  $("bron-alert-ov").innerHTML=alertHtml(F)+`<p class="muted" style="font-size:12px;margin:10px 0 0">Intakes, voortrajecten en realisaties tellen in de periode waarin ze zijn ingepland of geboekt. Een lead van vorige maand kan dus deze maand een intake worden.</p>`;
+  $("bron-alert").innerHTML=alertHtml(F);
+  const A=achterstand(F),worst=A.ergste&&A.ergste.bron;
+  const rows=bronRijen(F).filter(r=>r.l||r.i||r.v||r.r).sort((a,b)=>b.l-a.l||b.i-a.i);
+  const tot=rows.reduce((a,r)=>({l:a.l+r.l,i:a.i+r.i,v:a.v+r.v,r:a.r+r.r,marge:a.marge+r.marge}),{l:0,i:0,v:0,r:0,marge:0});
+  const z=v=>v?v:'<span class="muted">0</span>';
+  $("bron-funnel").innerHTML=rows.length?`<table><thead><tr><th>Bron</th><th class="r">Leads</th><th class="r">Intakes</th><th class="r">Lead → intake</th><th class="r">Voortrajecten</th><th class="r">Realisaties</th><th class="r">Bruto marge</th></tr></thead><tbody>${rows.map(r=>{const bad=r.bron===worst;const c=r.l?r.i/r.l:null;const cls=c==null?"none":bad?"bad":c<A.gem*.6?"warn":"good";
+    return `<tr${bad?' style="background:var(--badbg)"':""}><td><b>${esc(r.bron)}</b>${UITGAAND.has(r.bron)?' <span class="muted" style="font-size:11px">uitgaand</span>':""}${bad?' <span class="pill bad" style="font-size:11px">verst achter</span>':""}</td><td class="r num">${z(r.l)}</td><td class="r num">${z(r.i)}</td><td class="r">${r.l&&r.bron!=="Onbekend (geen bron)"?`<span class="pill ${cls}">${pctS(r.i,r.l)}</span>`:'<span class="muted">–</span>'}</td><td class="r num">${z(r.v)}</td><td class="r num">${z(r.r)}</td><td class="r num">${r.marge?eurK(r.marge):'<span class="muted">–</span>'}</td></tr>`}).join("")}
+    <tr><td><b>Totaal</b></td><td class="r num"><b>${tot.l}</b></td><td class="r num"><b>${tot.i}</b></td><td class="r"><b>${pctS(tot.i,tot.l)}</b></td><td class="r num"><b>${tot.v}</b></td><td class="r num"><b>${tot.r}</b></td><td class="r num"><b>${eurK(tot.marge)}</b></td></tr></tbody></table>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">De bron van een intake is wat bij de intake is gekozen. Staat daar Website of E-book, dan zoek ik de lead met dezelfde naam op. Deals koppel ik via de klantnaam aan de intake.</p>`:`<div class="empty">Nog geen gegevens in ${esc(F.P.label)}.</div>`}
+function renderKosten(){const F=funnelData();
+  const rows=bronRijen(F).filter(r=>r.kosten||r.l||r.marge).sort((a,b)=>b.kosten-a.kosten||b.l-a.l);
+  const K=rows.reduce((a,r)=>a+r.kosten,0),Lc=F.L.length,Ic=F.I.length,Mg=F.M.reduce((a,x)=>a+(+x.bedrag||0),0);
+  $("ks-kpis").innerHTML=[["Marketingkosten",K?eurK(K):"–",F.P.label],["Kosten per lead",K&&Lc?eur(K/Lc):"–",Lc+" leads"],["Kosten per intake",K&&Ic?eur(K/Ic):"–",Ic+" intakes"],["Rendement",K?(Math.round(Mg/K*10)/10).toLocaleString("nl-NL")+"x":"–",K?`${eurK(Mg)} bruto marge op ${eurK(K)} kosten`:"vul eerst kosten in"]]
+    .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${esc(sub)}</div></div>`).join("");
+  const e=v=>v?eur(v):'<span class="muted">–</span>';
+  $("ks-table").innerHTML=rows.length?`<table><thead><tr><th>Bron</th><th class="r">Kosten</th><th class="r">Leads</th><th class="r">Per lead</th><th class="r">Intakes</th><th class="r">Per intake</th><th class="r">Voortr.</th><th class="r">Realis.</th><th class="r">Bruto marge</th><th class="r">Rendement</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.bron)}</b></td><td class="r num">${e(r.kosten)}</td><td class="r num">${r.l||'<span class="muted">0</span>'}</td><td class="r num">${r.kosten&&r.l?eur(r.kosten/r.l):'<span class="muted">–</span>'}</td><td class="r num">${r.i||'<span class="muted">0</span>'}</td><td class="r num">${r.kosten&&r.i?eur(r.kosten/r.i):r.kosten?'<span class="pill bad">geen intake</span>':'<span class="muted">–</span>'}</td><td class="r num">${r.v||'<span class="muted">0</span>'}</td><td class="r num">${r.r||'<span class="muted">0</span>'}</td><td class="r num">${r.marge?eurK(r.marge):'<span class="muted">–</span>'}</td><td class="r">${r.kosten?`<span class="pill ${r.marge>=r.kosten*3?"good":r.marge>=r.kosten?"warn":"bad"}">${(Math.round(r.marge/r.kosten*10)/10).toLocaleString("nl-NL")}x</span>`:'<span class="muted">–</span>'}</td></tr>`).join("")}</tbody></table>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Rendement = bruto marge uit deals van die bron gedeeld door de kosten. Groen vanaf 3x, oranje tussen 1x en 3x, rood onder 1x. Algemene kosten (tools, fotograaf, bureau) staan apart onder Algemeen marketing.</p>`:`<div class="empty">Nog geen kosten of leads in ${esc(F.P.label)}.</div>`;
+  const opts=KOSTEN_BRONNEN.map(b=>`<option>${esc(b)}</option>`).join("");
+  $("ks-form-card").innerHTML=S.canEdit?`<h3>Kosten toevoegen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand en per bron, exclusief btw. Alleen Stijn, Sil, Timo en Jeroen.</p>
+    <form class="f" id="ks-form" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"><label>Maand<input id="ks-maand" type="month" required value="${S.month}"></label><label>Bron<select id="ks-bron">${opts}</select></label><label>Bedrag (€)<input id="ks-bedrag" type="number" min="0" step="1" required></label><label class="full">Omschrijving<input id="ks-oms" placeholder="Bijvoorbeeld: Meta advertenties pilates e-book"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>`
+    :`<h3>Kosten toevoegen</h3><p class="muted" style="font-size:13px">Kosten worden ingevuld door Stijn, Sil, Timo of Jeroen.</p>`;
+  const list=S.kosten.filter(k=>F.P.in(k.maand)).sort((a,b)=>String(b.maand).localeCompare(String(a.maand))||(+b.bedrag||0)-(+a.bedrag||0));
+  $("ks-list").innerHTML=list.length?`<table><thead><tr><th>Maand</th><th>Bron</th><th>Omschrijving</th><th class="r">Bedrag</th><th>Herkomst</th><th></th></tr></thead><tbody>${list.map(k=>`<tr><td>${esc(monthLabel(k.maand))}</td><td>${esc(k.bron)}</td><td class="muted">${esc(k.omschrijving||"")}</td><td class="r num">${eur(k.bedrag)}</td><td>${String(k.id).startsWith("exact-")?'<span class="chip">Exact</span>':'<span class="chip">Handmatig</span>'}</td><td class="r">${S.canEdit&&!String(k.id).startsWith("exact-")?`<button class="btn ghost" data-ks-del="${esc(k.id)}" style="padding:4px 10px;font-size:12px">Verwijderen</button>`:""}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nog geen kosten ingevuld voor ${esc(F.P.label)}.</div>`}
+(function(){const sel=document.getElementById("if-bron");if(sel)sel.innerHTML="<option></option>"+BRON_OPTIES.map(b=>`<option>${b}</option>`).join("")+["Website","Instagram","E-book"].map(b=>`<option value="${b}">${b} (oud)</option>`).join("")})();
+document.addEventListener("submit",async e=>{if(e.target.id!=="ks-form")return;e.preventDefault();
+  const d={maand:$("ks-maand").value,bron:$("ks-bron").value,bedrag:+$("ks-bedrag").value||0,omschrijving:$("ks-oms").value.trim(),door:(S.meName||"").split(" ")[0],bronType:"handmatig",createdAt:new Date().toISOString()};
+  if(!d.maand||!d.bedrag)return;if(await save("kosten","hand-"+Date.now().toString(36),d)){toast("Kosten opgeslagen");$("ks-bedrag").value="";$("ks-oms").value=""}});
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-ks-del]");if(b){await del("kosten",b.dataset.ksDel,b);return}
+  const r=e.target.closest(".fun-range button");if(r){S.bronRange=r.dataset.r;render()}});
 function renderBron(m,L){
   const jaar=S.bronRange==="j";const set=jaar?S.leads.filter(l=>String(l.datum||"").slice(0,4)===m.slice(0,4)&&String(l.datum||"")<=m+"-31"):L;
   document.querySelectorAll("#bron-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===jaar)));
@@ -727,7 +854,7 @@ function renderBron(m,L){
   const tot={e:0,o:0,x:0};rows.forEach(([,r])=>{tot.e+=r.e;tot.o+=r.o;tot.x+=r.x});const n=tot.e+tot.o+tot.x;
   const cel=v=>`<td class="r num">${v||'<span class="muted">0</span>'}</td>`;
   $("lead-bron").innerHTML=rows.length?`<table><thead><tr><th>Bron</th><th class="r">Softleads</th><th class="r">Offerteaanvragen</th><th class="r">Overige</th><th class="r">Totaal</th><th style="width:30%">Aandeel</th></tr></thead><tbody>${rows.map(([b,r,t])=>`<tr><td><b>${esc(b)}</b></td>${cel(r.e)}${cel(r.o)}${cel(r.x)}<td class="r num"><b>${t}</b></td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)"><i style="width:${r.o/max*100}%;background:#279FDA"></i><i style="width:${r.e/max*100}%;background:#9CCBEA"></i><i style="width:${r.x/max*100}%;background:var(--fg)"></i></div><span class="muted num" style="font-size:12px;min-width:34px;text-align:right">${Math.round(t/n*100)}%</span></div></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num"><b>${tot.e}</b></td><td class="r num"><b>${tot.o}</b></td><td class="r num"><b>${tot.x}</b></td><td class="r num"><b>${n}</b></td><td></td></tr></tbody></table>`:`<div class="empty">Nog geen leads in ${jaar?m.slice(0,4):esc(monthLabel(m))}.</div>`}
-document.addEventListener("click",e=>{const b=e.target.closest("#bron-range button");if(!b)return;S.bronRange=b.dataset.r;renderLeads()});
+document.addEventListener("click",e=>{const b=e.target.closest("#bron-range button");if(!b)return;S.bronRange=b.dataset.r;render()});
 function renderLeads(){
   const m=S.month,s=stats(m),L=s.L,T=s.T,j=judge(L.length,T.fa_leads,m,false);
   const cnt=k=>L.filter(l=>l.type===k).length;
@@ -956,12 +1083,14 @@ function renderHello(){renderMe();
   $("hello-sub").textContent=new Date().toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   const s=stats(curMonth());$("c-leads").textContent=s.leads;$("c-intakes").textContent=s.intakes;
 }
-let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderIntakes();renderMarge();renderTargets();renderOdoo();revealAll()})}
+let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOdoo();revealAll()})}
 function showTab(t,push){if(!TABS.includes(t))t="overzicht";S.tab=t;document.querySelectorAll("section[data-p]").forEach(s=>s.hidden=s.dataset.p!==t);
-  document.querySelectorAll("#menu button,#bottom button").forEach(b=>{if(b.dataset.t===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  document.querySelectorAll("#menu button,.subnav button").forEach(b=>{if(b.dataset.t===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  document.querySelectorAll("#bottom button").forEach(b=>{if(b.dataset.t===t||(b.dataset.g&&b.dataset.g===GROEP[t]))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   if(push)try{history.replaceState(null,"","#"+t)}catch(e){}
   window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});setTimeout(revealAll,0)}
 document.querySelectorAll("#menu,#bottom").forEach(n=>n.addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(b)showTab(b.dataset.t,true)}));
+document.addEventListener("click",e=>{const b=e.target.closest(".subnav button[data-t]");if(b)showTab(b.dataset.t,true)});
 $("month").onchange=e=>{S.month=e.target.value;render()};
 
 function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2800)}
@@ -1054,7 +1183,7 @@ let palSel=0,palItems=[];
 function palData(q){
   q=q.trim().toLowerCase();
   const acts=[["Nieuwe intake","#i-plus",()=>openDrawer("intake"),"actie"],["Bruto marge toevoegen","#i-plus",()=>openDrawer("marge"),"actie"],["Overige aanvraag toevoegen","#i-plus",()=>openDrawer("lead"),"actie"],["Mijn profiel en foto","#i-home",()=>openProfile(),"actie"],
-    ...TABS.map(t=>[{overzicht:"Overzicht",leads:"Leads",intakes:"Intakes",marge:"Bruto marge",odoo:"Offertes & pijplijn",targets:"Targets"}[t],"#i-home",()=>showTab(t,true),"ga naar"])];
+    ...TABS.map(t=>[{overzicht:"Overzicht",leads:"Leads & bronnen",kosten:"Kosten & rendement",intakes:"Intakes",marge:"Bruto marge",odoo:"Offertes & pijplijn",targets:"Targets"}[t],"#i-home",()=>showTab(t,true),"ga naar"])];
   const recs=[...S.intakes.map(i=>[i.klant,"#i-intake",()=>{showTab("intakes",true);editIntake(i.id)},"intake · "+(i.door||"")]),...S.marge.map(x=>[x.deal,"#i-euro",()=>{showTab("marge",true);editMarge(x.id)},eurK(x.bedrag)])];
   const all=q?[...acts,...recs].filter(a=>String(a[0]).toLowerCase().includes(q)||String(a[3]).toLowerCase().includes(q)):acts;
   return all.slice(0,12);
@@ -1238,6 +1367,7 @@ async function boot(){
   const lost=()=>{setLive(false,"Verbinding weg");setStatus("De verbinding met de database is weggevallen. Herlaad de pagina.")};
   const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()}));render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
   sub("intakes","intakes");sub("marge","marge");sub("leads","leads");
+  db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("orderportefeuille").onSnapshot(snap=>{S.orders=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("profielen").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.profielen=o;render()},()=>{});

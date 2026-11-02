@@ -12,7 +12,7 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
 - Huisstijl: FA blauw #279FDA, navy #0D1B26, font Poppins.
 
 ## Architectuur
-- `index.html`: de hele app (HTML, CSS, JS in één bestand). Tabs: Overzicht, Leads, Intakes, Bruto marge, Offertes & pijplijn, Targets.
+- `index.html`: de hele app (HTML, CSS, JS in één bestand). Menu: Overzicht (met funneltrechter), Marketing (Leads & bronnen, Kosten & rendement), Sales (Intakes, Bruto marge, Offertes & pijplijn), Targets.
 - `adapter.js`: Supabase-client, pincode-login, en een `db`-laag (collection/doc/onSnapshot/set/delete) bovenop tabel `docs`.
 - Supabase-project `fa-cockpit` (id `xcouykrxuihszhleobcw`, eu-central-1).
   - `public.docs(collection, id, data jsonb, updated_at, updated_by)`, realtime aan.
@@ -30,6 +30,13 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
   Velden: `offerteportefeuille`, `fc2026Ong/Gew`, `fc2027Ong/Gew` (verkoop), `rl2026Ong/Gew`, `rl2027Ong/Gew` (realisatie).
 - `orderportefeuille` (id = datum): handmatige weekstand door admins: `{datum, bedrag, notitie, door}`.
 - `data/targets/maanden`: targets per maand.
+- `kosten`: marketingkosten `{maand: 'YYYY-MM', bron, bedrag, omschrijving}`. Handmatig (id `hand-…`, alleen admins) of later uit Exact via `ingest` (id moet beginnen met `exact-`).
+- `leads` bevat ook `bron` (UTM-bron), `medium` en `leadbron` uit Odoo; `ingest` kan met `patch` alleen die velden bijwerken.
+
+## Bronlogica
+- Bron van een lead: UTM-bron + medium (Meta ads, Google organisch, Instagram organisch …); zonder UTM de Leadbron uit Odoo.
+- Bron van een intake: het gekozen veld; bij leeg/Website/E-book de lead met dezelfde naam. Deals koppelen via klantnaam aan de intake.
+- "Verst achter" = bron met de meeste gemiste intakes t.o.v. de gemiddelde lead→intake-conversie (min. 5 leads).
 
 ## Forecastregels
 - Alleen open kansen in Lead, Inventarisatie, Follow-up, Offerte, Getekend onder voorbehoud.
