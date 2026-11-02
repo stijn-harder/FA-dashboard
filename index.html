@@ -464,10 +464,8 @@ nav.bottom{display:none}
     <section data-p="leads" hidden>
       <div class="ph"><div><div class="eyebrow">Stap 1 · funnel</div><h1>Leads</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
       <div class="grid4" id="lead-kpis"></div>
-      <div class="grid3">
-        <div class="card chart"><div class="row between" style="margin-bottom:8px"><h3 id="lead-chart-t">Per dag</h3><div class="legend" id="lead-legend"></div></div><div id="lead-chart"></div></div>
-        <div class="card"><h3>Per kanaal</h3><div id="lead-kanaal" style="margin-top:8px"></div></div>
-      </div>
+      <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Per bron</h3><div class="muted" style="font-size:12px">Waar de leads vandaan komen. Hierop sturen we wat we opschalen.</div></div><div class="seg" id="bron-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="lead-bron" class="tbl" style="margin-top:8px"></div></div>
+      <div class="card chart"><div class="row between" style="margin-bottom:8px"><h3 id="lead-chart-t">Per dag</h3><div class="legend" id="lead-legend"></div></div><div id="lead-chart"></div></div>
       <div class="card tbl" id="lead-table"></div>
     </section>
 
@@ -562,7 +560,7 @@ nav.bottom{display:none}
     <p class="full muted" style="margin:0;font-size:12px">Website-aanvragen en e-books komen elk half uur automatisch uit Odoo. Hier zet je aanvragen via bellen, mail, netwerk of social.</p>
     <label class="full">Naam<input id="lf-naam" required></label>
     <label>Binnengekomen<input id="lf-datum" type="date" required></label>
-    <label>Kanaal<select id="lf-kanaal"><option>Inkomend belletje</option><option>E-mail</option><option>Netwerk</option><option>Instagram</option><option>LinkedIn</option><option>Aanbeveling</option><option>Beurs</option><option>Ander platform</option></select></label>
+    <label>Bron<select id="lf-kanaal"><option>Inkomend belletje</option><option>E-mail</option><option>Netwerk</option><option>Instagram</option><option>LinkedIn</option><option>Aanbeveling</option><option>Beurs</option><option>Ander platform</option></select></label>
     <div class="full row"><button class="btn primary" type="submit">Lead opslaan</button></div>
   </form>
 </div>
@@ -592,7 +590,7 @@ const TARGET_FIELDS=[
  ["lars_intakes","Lars","Gekwalificeerde intakes"],["lars_intakes_min","Lars","Ondergrens intakes"]];
 const MONTHS=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
 const TABS=["overzicht","leads","intakes","marge","odoo","targets"];
-const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
+const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,bronRange:"m",trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const eur=n=>"€ "+Math.round(n||0).toLocaleString("nl-NL");
@@ -712,12 +710,30 @@ function renderFeed(){
 
 /* ---------- Leads ---------- */
 const TYPE_COL={"Offerteaanvraag":"#279FDA","E-book":"#9CCBEA","Overige aanvraag":"var(--fg)"};
+// Bron van een lead: UTM-bron + medium uit Odoo; zonder UTM de Leadbron/het kanaal dat het team invulde.
+const BRON_NAAM={google:"Google",bing:"Bing",youtube:"YouTube","chatgpt.com":"ChatGPT",chatgpt:"ChatGPT",linkedin:"LinkedIn",tiktok:"TikTok",direct:"Direct (website)",email:"E-mail",newsletter:"Nieuwsbrief"};
+function bronVan(l){const src=String(l.bron||"").toLowerCase().trim(),med=String(l.medium||"").toLowerCase().trim();const ads=/^(ads|paid|cpc|ppc|paid_social|social_paid)$/.test(med);
+  if(src==="facebook"||src==="instagram"||src==="meta"||src==="fb"||src==="ig"){if(ads)return "Meta ads";return (src==="facebook"||src==="fb"?"Facebook":"Instagram")+(med==="bio"?" bio":" organisch")}
+  if(src==="google")return ads?"Google Ads":"Google organisch";
+  if(src&&src!=="ebook"&&src!=="onbekend")return BRON_NAAM[src]||(src.charAt(0).toUpperCase()+src.slice(1));
+  const hand=String(l.leadbron||l.kanaal||"").trim();
+  if(hand&&!/^website$/i.test(hand)&&!/^ebook/i.test(hand))return hand.replace(/ \(.*\)$/,"");
+  return "Onbekend (geen bron)"}
+function renderBron(m,L){
+  const jaar=S.bronRange==="j";const set=jaar?S.leads.filter(l=>String(l.datum||"").slice(0,4)===m.slice(0,4)&&String(l.datum||"")<=m+"-31"):L;
+  document.querySelectorAll("#bron-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===jaar)));
+  const T={};set.forEach(l=>{const b=bronVan(l);const r=T[b]=T[b]||{e:0,o:0,x:0};if(l.type==="E-book")r.e++;else if(l.type==="Offerteaanvraag")r.o++;else r.x++});
+  const rows=Object.entries(T).map(([b,r])=>[b,r,r.e+r.o+r.x]).sort((a,b)=>b[2]-a[2]||a[0].localeCompare(b[0]));const max=Math.max(1,...rows.map(r=>r[2]));
+  const tot={e:0,o:0,x:0};rows.forEach(([,r])=>{tot.e+=r.e;tot.o+=r.o;tot.x+=r.x});const n=tot.e+tot.o+tot.x;
+  const cel=v=>`<td class="r num">${v||'<span class="muted">0</span>'}</td>`;
+  $("lead-bron").innerHTML=rows.length?`<table><thead><tr><th>Bron</th><th class="r">Softleads</th><th class="r">Offerteaanvragen</th><th class="r">Overige</th><th class="r">Totaal</th><th style="width:30%">Aandeel</th></tr></thead><tbody>${rows.map(([b,r,t])=>`<tr><td><b>${esc(b)}</b></td>${cel(r.e)}${cel(r.o)}${cel(r.x)}<td class="r num"><b>${t}</b></td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)"><i style="width:${r.o/max*100}%;background:#279FDA"></i><i style="width:${r.e/max*100}%;background:#9CCBEA"></i><i style="width:${r.x/max*100}%;background:var(--fg)"></i></div><span class="muted num" style="font-size:12px;min-width:34px;text-align:right">${Math.round(t/n*100)}%</span></div></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num"><b>${tot.e}</b></td><td class="r num"><b>${tot.o}</b></td><td class="r num"><b>${tot.x}</b></td><td class="r num"><b>${n}</b></td><td></td></tr></tbody></table>`:`<div class="empty">Nog geen leads in ${jaar?m.slice(0,4):esc(monthLabel(m))}.</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("#bron-range button");if(!b)return;S.bronRange=b.dataset.r;renderLeads()});
 function renderLeads(){
   const m=S.month,s=stats(m),L=s.L,T=s.T,j=judge(L.length,T.fa_leads,m,false);
   const cnt=k=>L.filter(l=>l.type===k).length;
-  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:""],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website"],["E-books",cnt("E-book"),"te bellen door Lars"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social"]]
+  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:""],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social"]]
     .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
-  $("lead-legend").innerHTML=Object.entries(TYPE_COL).map(([k,c])=>`<span style="--c:${c}">${k}</span>`).join("");
+  $("lead-legend").innerHTML=Object.entries(TYPE_COL).map(([k,c])=>`<span style="--c:${c}">${k==="E-book"?"Softlead (e-book)":k}</span>`).join("");
   $("lead-chart-t").textContent="Per dag · "+monthLabel(m);
   const n=dim(m);
   const days=[...Array(n)].map((_,i)=>{const d=m+"-"+pad(i+1);const r=L.filter(l=>l.datum===d);return {d:i+1,o:r.filter(l=>l.type==="Offerteaanvraag").length,e:r.filter(l=>l.type==="E-book").length,x:r.filter(l=>l.type==="Overige aanvraag").length}});
@@ -729,10 +745,9 @@ function renderLeads(){
     [["o","#279FDA"],["e","#9CCBEA"],["x","var(--fg)"]].forEach(([k,c])=>{if(!d[k])return;const h=(H-pd-10)*d[k]/max;base-=h;sv+=`<rect x="${x}" y="${base}" width="${w}" height="${h}" fill="${c}"><title>${d.d} ${MONTHS[+m.split("-")[1]-1]}: ${d[k]}</title></rect>`});
     if(d.d===1||d.d%5===0)sv+=`<text x="${x+w/2}" y="${H-6}" text-anchor="middle">${d.d}</text>`});
   $("lead-chart").innerHTML=sv+"</svg>";
-  const kan={};L.forEach(l=>{const k=l.kanaal||"Onbekend";kan[k]=(kan[k]||0)+1});const ke=Object.entries(kan).sort((a,b)=>b[1]-a[1]);const km=Math.max(1,...ke.map(x=>x[1]));
-  $("lead-kanaal").innerHTML=ke.length?ke.map(([k,v])=>`<div class="hbar" style="grid-template-columns:minmax(0,130px) minmax(0,1fr) auto"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span><div class="t"><i style="width:${v/km*100}%"></i></div><b class="num">${v}</b></div>`).join(""):`<div class="empty">Nog geen leads.</div>`;
+  renderBron(m,L);
   const rows=[...L].sort((a,b)=>b.datum.localeCompare(a.datum));
-  $("lead-table").innerHTML=rows.length?`<table><thead><tr><th>Lead</th><th>Binnen</th><th>Type</th><th>Kanaal</th><th>Bron</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${esc(l.naam)}</td><td class="num">${dLabel(l.datum)}</td><td><span class="chip">${esc(l.type)}</span></td><td>${esc(l.kanaal||"")}</td><td class="muted">${esc(l.bron||"")}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nog geen leads in ${esc(monthLabel(m))}.</div>`;
+  $("lead-table").innerHTML=rows.length?`<table><thead><tr><th>Lead</th><th>Binnen</th><th>Type</th><th>Bron</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${esc(l.naam)}</td><td class="num">${dLabel(l.datum)}</td><td><span class="chip">${esc(l.type)}</span></td><td>${esc(bronVan(l))}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nog geen leads in ${esc(monthLabel(m))}.</div>`;
 }
 
 /* ---------- Intakes ---------- */
