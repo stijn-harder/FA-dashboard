@@ -46,3 +46,7 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
 
 ## Testen
 Geen buildstap. Lokaal openen kan, maar de Supabase-verbinding werkt alleen live. Controleer na een push de live pagina.
+
+## Open punten
+- **Leads missen na een gemiste run (voor Stijn, n8n `f2rSCItEQepF0UfK`).** Op 5 nov zijn 5 Odoo-leads (7337, 7338, 7340, 7341, 7342, aangemaakt 07:50 tot 11:04) nooit in `leads` gekomen. In Odoo verschillen ze nergens van leads die wel binnenkwamen; alleen het tijdstip. De workflow haalt kennelijk alleen nieuwe leads sinds de vorige run op, dus een gemiste run is blijvend. Gewenst: elke run alle leads van de lopende (en vorige) maand ophalen en via `ingest` met `patch` bijwerken, zodat het zichzelf herstelt. Regels blijven: 'voortkomend uit' gevuld = geen nieuwe lead. Leadbron staat in Odoo in `lead_properties` (eigenschap "Leadbron"); waarden trimmen ("E-mail " → "E-mail").
+- De 5 leads zijn op 8 nov door Jeroen handmatig toegevoegd in `docs` (zelfde formaat, type "Overige aanvraag", kanaal = leadbron). Na de fix kan de workflow ze gewoon overschrijven.
