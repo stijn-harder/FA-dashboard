@@ -566,7 +566,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <label>Datum ingepland<input id="if-ingepland" type="date" required></label>
     <label>Datum afspraak<input id="if-afspraak" type="date"></label>
     <label>Bron<select id="if-bron"></select></label>
-    <label>Budget (€)<input id="if-budget" type="number" min="0" step="1000"></label>
+    <label>Budget (€)<input id="if-budget" type="number" min="0" step="any"></label>
     <label>m²<input id="if-m2" type="number" min="0"></label>
     <label>Pand<select id="if-pand"><option></option><option>Pand op het oog</option><option>Pand getekend</option><option>Bestaande locatie</option><option>Nog geen pand</option></select></label>
     <label>Wat doet FA?<select id="if-wat"><option></option><option>Turn-key</option><option>Ontwerp</option><option>Interieur</option><option>Verbouwing</option><option>Apparatuur</option></select></label>
@@ -1023,7 +1023,7 @@ function renderPortfolio(o){
     <div style="display:grid;gap:16px">${chartCard("Portefeuilles per week",["offerteportefeuille","ord"])}${chartCard("Forecast 2026 per week",["fc2026Ong","fc2026Gew","rl2026Ong","rl2026Gew"])}${chartCard("Forecast 2027 per week",["fc2027Ong","fc2027Gew","rl2027Ong","rl2027Gew"])}</div>
     <p class="muted" style="font-size:12px;margin:-4px 0 0">Per week telt de laatste stand van die week. De forecast telt alleen kansen met een sluitingsdatum én opleverdatum in Odoo. Verkoop volgt het jaar van de sluitingsdatum, realisatie het jaar van de opleverdatum. Weekstanden van de forecast lopen vanaf week 44.</p>
     ${S.canEdit?`<div class="card"><h3>Orderportefeuille bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Totale bruto marge van getekende opdrachten die nog uitgevoerd moeten worden, ongeacht het jaar van uitvoering. Vul dit elke week in, bijvoorbeeld op maandag. De week wordt uit de datum bepaald.</p>
-      <form class="f" id="ord-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Stand per<input id="ord-datum" type="date" required value="${today_()}"></label><label>Orderportefeuille (€)<input id="ord-bedrag" type="number" min="0" step="1000" required></label><label class="full">Notitie<input id="ord-notitie" placeholder="Bijvoorbeeld: incl. Axon en BASE"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>`:""}
+      <form class="f" id="ord-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Stand per<input id="ord-datum" type="date" required value="${today_()}"></label><label>Orderportefeuille (€)<input id="ord-bedrag" type="number" min="0" step="any" required></label><label class="full">Notitie<input id="ord-notitie" placeholder="Bijvoorbeeld: incl. Axon en BASE"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>`:""}
   </section>`;
 }
 function today_(){return today()}
