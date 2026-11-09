@@ -12,12 +12,12 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
 - Huisstijl: FA blauw #279FDA, navy #0D1B26, font Poppins.
 
 ## Architectuur
-- `index.html`: de hele app (HTML, CSS, JS in één bestand). Menu: Overzicht (met funneltrechter), Marketing (Leads & bronnen, Kosten & rendement), Sales (Intakes, Bruto marge, Offertes & pijplijn), Targets.
+- `index.html`: de hele app (HTML, CSS, JS in één bestand). Menu: Overzicht (met funneltrechter), Marketing (Leads & bronnen, Kosten & rendement), Sales (Intakes, Bruto marge, Offertes & pijplijn), Financieel (alleen admins, opnieuw pincode, vergrendelt na 30 min), Targets.
 - `adapter.js`: Supabase-client, pincode-login, en een `db`-laag (collection/doc/onSnapshot/set/delete) bovenop tabel `docs`.
 - Supabase-project `fa-cockpit` (id `xcouykrxuihszhleobcw`, eu-central-1).
   - `public.docs(collection, id, data jsonb, updated_at, updated_by)`, realtime aan.
   - `public.team(user_id, naam, rol, admin)`. Admins: Stijn, Sil, Timo, Jeroen.
-  - RLS: lezen alleen teamleden. `odoo` en `odoo_trend` alleen via de functie `ingest` (n8n). `data/targets/*` en `orderportefeuille` alleen admins. `profielen` alleen je eigen rij.
+  - RLS: lezen alleen teamleden. `odoo` en `odoo_trend` alleen via de functie `ingest` (n8n). `data/targets/*`, `orderportefeuille`, `kosten` schrijven alleen admins. `financieel` lezen én schrijven alleen admins. `profielen` alleen je eigen rij.
   - Inloggen: e-mail `<naam>@cockpit.fitnessaannemer.nl`, wachtwoord is `fa-pin-` + pincode.
 - n8n-workflow "Ochtendcijfers Odoo (alleen lezen)" (id `f2rSCItEQepF0UfK`), elk half uur:
   Odoo (leads, offertes, open verkoopkansen, activiteiten) → berekenen → `Cockpit-pakket` → POST `rpc/ingest`.
@@ -31,6 +31,7 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
 - `orderportefeuille` (id = datum): handmatige weekstand door admins: `{datum, bedrag, notitie, door}`.
 - `data/targets/maanden`: targets per maand.
 - `kosten`: marketingkosten `{maand: 'YYYY-MM', bron, bedrag, omschrijving}`. Handmatig (id `hand-…`, alleen admins) of later uit Exact via `ingest` (id moet beginnen met `exact-`).
+- `financieel`: alleen admins. id's: `cashflow-YYYY-MM-DD` `{datum, bank, deb, cred, mk}` (beschikbaar = bank + deb − cred − 2× mk); `werkelijk-YYYY-MM`, `begroting-50k-YYYY-MM`, `begroting-100k-YYYY-MM` met `{soort, maand, regels:{omzet, kostprijs, uitbesteed, lonen, sociaal, afschr, personeel, kantoor, verkoop, auto, algemeen, rente}}`. Nu handmatig; later bank/deb/cred en `werkelijk` uit Exact (dan `ingest` uitbreiden voor deze collectie).
 - `leads` bevat ook `bron` (UTM-bron), `medium` en `leadbron` uit Odoo; `ingest` kan met `patch` alleen die velden bijwerken.
 
 ## Bronlogica
