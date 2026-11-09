@@ -168,6 +168,7 @@ td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
 tr.click{cursor:pointer}
 [data-bk]{cursor:pointer}
 [data-bk]:hover{color:var(--blue);text-decoration:underline}
+#lead-kpis [data-bk]:hover{text-decoration:none;border-color:var(--blue)}
 tr.click:hover td{background:var(--soft)}
 td.r,th.r{text-align:right}
 .hbar{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;padding:7px 0}
@@ -864,7 +865,8 @@ function intakeLijst(I){const rows=[...I].sort((a,b)=>String(b.datumIngepland).l
   return rows.length?`<div class="tbl"><table><thead><tr><th>Klant</th><th>Door</th><th>Ingepland</th><th>Uitkomst</th></tr></thead><tbody>${rows.map(i=>`<tr><td><b>${esc(i.klant)}</b></td><td>${esc(i.door||"")}</td><td class="num">${dLabel(i.datumIngepland)}</td><td>${i.uitkomst?`<span class="chip">${esc(i.uitkomst)}</span>`:""}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Geen intakes.</div>`}
 function dealLijst(M){const rows=[...M].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));const tot=rows.reduce((a,x)=>a+(+x.bedrag||0),0);
   return rows.length?`<div class="tbl"><table><thead><tr><th>Deal</th><th>Datum</th><th>Persoon</th><th>Soort</th><th class="r">Bruto marge</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.deal)}</b></td><td class="num">${dLabel(x.datum)}</td><td>${esc(x.persoon||"")}</td><td>${x.soort?`<span class="chip">${esc(x.soort)}</span>`:""}</td><td class="r num">${eur(x.bedrag)}</td></tr>`).join("")}<tr><td colspan="4"><b>Totaal</b></td><td class="r num"><b>${eur(tot)}</b></td></tr></tbody></table></div>`:`<div class="empty">Geen deals.</div>`}
-function bronDetail(bron,k){const F=funnelData(),alle=!bron;
+function bronDetail(bron,k,maand){const F=funnelData(),alle=!bron;
+  if(maand){F.P={label:monthLabel(S.month)};F.L=S.leads.filter(l=>ym(l.datum)===S.month)}
   const L=F.L.filter(l=>alle||bronVan(l)===bron),I=F.I.filter(i=>alle||intakeBron(i)===bron),M=F.M.filter(x=>alle||margeBron(x)===bron);
   const wie=(alle?"Alle bronnen":bron)+" · "+F.P.label;
   const TY={e:["E-book","Softleads"],o:["Offerteaanvraag","Offerteaanvragen"],x:[null,"Overige aanvragen"]};
@@ -874,12 +876,12 @@ function bronDetail(bron,k){const F=funnelData(),alle=!bron;
   if(k==="v"||k==="r"){const s=k==="v"?"Voortraject":"Realisatie";const MM=M.filter(x=>x.soort===s);return openDetail(k==="v"?"Voortrajecten":"Realisaties",`${wie} · ${MM.length} deals.`,dealLijst(MM))}
   if(k==="m")return openDetail("Bruto marge",`${wie} · ${M.length} deals.`,dealLijst(M));
   openDetail(alle?"Alle bronnen":bron,F.P.label,`<h3>Leads (${L.length})</h3>${leadLijst(L,alle)}<h3 style="margin-top:16px">Intakes (${I.length})</h3>${intakeLijst(I)}<h3 style="margin-top:16px">Deals (${M.length})</h3>${dealLijst(M)}`)}
-document.addEventListener("click",e=>{const c=e.target.closest("#lead-bron [data-bk],#bron-funnel [data-bk]");if(!c)return;const tr=c.closest("tr[data-bron]");if(!tr)return;bronDetail(tr.dataset.bron,c.dataset.bk)});
+document.addEventListener("click",e=>{const c=e.target.closest("#lead-bron [data-bk],#bron-funnel [data-bk],#lead-kpis [data-bk]");if(!c)return;const tr=c.closest("[data-bron]");if(!tr)return;bronDetail(tr.dataset.bron,c.dataset.bk,!!tr.dataset.maand)});
 function renderLeads(){
   const m=S.month,s=stats(m),L=s.L,T=s.T,j=judge(L.length,T.fa_leads,m,false);
   const cnt=k=>L.filter(l=>l.type===k).length;
   $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:""],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social"]]
-    .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
+    .map(([k,v,sub],i)=>`<div class="card" data-bron="" data-maand="1"${v?` data-bk="${["l","o","e","x"][i]}" title="Klik om de leads te zien"`:""}><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
   $("lead-legend").innerHTML=Object.entries(TYPE_COL).map(([k,c])=>`<span style="--c:${c}">${k==="E-book"?"Softlead (e-book)":k}</span>`).join("");
   $("lead-chart-t").textContent="Per dag · "+monthLabel(m);
   const n=dim(m);
