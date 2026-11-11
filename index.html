@@ -1534,7 +1534,7 @@ function renderFin(){
     const last=gm[gm.length-1],H=finSom("werkelijk",gm),per=gm.length>1?mnL(gm[0]).slice(0,3)+"–"+mnL(last).slice(0,3):mnL(last).slice(0,3);
     const pc=v=>H.omzet?(Math.round(v/H.omzet*1000)/10).toLocaleString("nl-NL")+"% van de omzet":"";
     const kaart=(t,v,sub,donker)=>`<div class="card" style="${donker?"background:var(--navy);border-color:var(--navy);color:#fff":""}"><div class="eyebrow" style="${donker?"color:#9CB4C8":""}">${t}</div><div class="stat num" style="white-space:nowrap">${eur(v)}</div><div style="font-size:12px;${donker?"color:#C9D6E2":""}" class="${donker?"":"muted"}">${esc(sub)}</div></div>`;
-    const f=(S.odoo||{}).forecast||{},R=(fcBak(f,"rl")[y]||{}),fc=+R.ongewogen||0,lo=latestOrd(),op=lo?+lo.bedrag:0,dek=fc+op;
+    const f=(S.odoo||{}).forecast||{},R=(fcBak(f,"rl")[y]||{}),fc=+R.gewogen||0,lo=latestOrd(),op=lo?+lo.bedrag:0,dek=fc+op;
     const restVan=last.slice(5)==="12"?null:mnL(alle[+last.slice(5)]).slice(0,3);
     const nodig=v=>v<=0?`<td class="r num" style="color:var(--good);white-space:nowrap"><b>gehaald</b><div style="font-size:11px">+${eur(-v)} boven doel</div></td>`:`<td class="r num"><b>${eur(v)}</b></td>`;
     const rij=s2=>{const bs="begroting-"+s2;if(!FIN.docs.some(d=>d.soort===bs))return "";const B=finSom(bs,alle);const nRes=B.res-H.res,nBr=B.bruto-H.bruto;const pct=nBr>0?Math.round(dek/nBr*100):null;const tv=nBr-dek;
@@ -1543,7 +1543,7 @@ function renderFin(){
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px">${kaart("Netto-omzet",H.omzet,"gerealiseerd "+per,false)}${kaart("Bruto marge",H.bruto,"gerealiseerd "+per+" ("+pc(H.bruto)+")",true)}${kaart("Resultaat",H.res,"uit gewone bedrijfsuitoefening, "+per+" ("+pc(H.res)+")",true)}</div>
       ${restVan?`<div class="eyebrow" style="margin:0 0 8px">Wat we nog moeten: ${restVan} t/m dec ${y}</div>
       <div class="card tbl" style="padding:0"><table class="fin-tb"><thead><tr><th>Begroting</th><th class="r">Doel resultaat FY</th><th class="r">Nog nodig resultaat</th><th class="r">Doel bruto marge FY</th><th class="r">Nog nodig bruto marge</th><th class="r">Dekking (forecast + orderportefeuille)</th><th class="r">Nog te vinden</th></tr></thead><tbody>${rij("50k")}${rij("100k")}</tbody></table></div>
-      <p class="muted" style="font-size:12px;margin:8px 0 22px">Nog nodig = doel uit de begroting min gerealiseerd t/m ${esc(mnL(last))}. Dekking = realisatieforecast ${y} uit Odoo (${eur(fc)}, ongewogen) plus orderportefeuille (${eur(op)}${lo?", stand "+dLabel(lo.datum):""}), afgezet tegen de nog benodigde bruto marge. Let op: de orderportefeuille is het totaal van alle getekende opdrachten, niet alleen ${y}.</p>`:""}`}}
+      <p class="muted" style="font-size:12px;margin:8px 0 22px">Nog nodig = doel uit de begroting min gerealiseerd t/m ${esc(mnL(last))}. Dekking = realisatieforecast ${y} uit Odoo (${eur(fc)}, gewogen: verwachte waarde × slagingskans) plus orderportefeuille (${eur(op)}${lo?", stand "+dLabel(lo.datum):""}), afgezet tegen de nog benodigde bruto marge. Let op: de orderportefeuille is het totaal van alle getekende opdrachten, niet alleen ${y}.</p>`:""}`}}
   const mn=x=>MONTHS[+x.slice(5)-1],Mn=x=>mn(x).charAt(0).toUpperCase()+mn(x).slice(1);
   if(!FIN.per||(FIN.per!=="ytd"&&!gm.includes(FIN.per)))FIN.per=gm.length?gm[gm.length-1]:"ytd";
   const per=FIN.per==="ytd"?gm:[FIN.per],ytdL=gm.length?(gm.length>1?"jan–"+mn(gm[gm.length-1]).slice(0,3):mn(gm[0]).slice(0,3)):"";
