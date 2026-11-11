@@ -547,10 +547,10 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="ph"><div><div class="eyebrow">Financieel</div><h1>Financieel</h1></div><button class="btn ghost" id="fin-lockbtn" type="button" hidden><svg><use href="#i-lock"/></svg>Vergrendelen</button></div>
       <div id="fin-lock"></div>
       <div id="fin-main" hidden>
-        <div class="card"><div class="row between" style="flex-wrap:wrap;gap:8px"><div><h3>Cashflow</h3><div class="muted" style="font-size:12px">Banksaldo + debiteuren − crediteuren − 2× maandkosten. Positief = na twee maanden vaste kosten nog geld over.</div></div><div class="muted" style="font-size:12px" id="fin-cf-per"></div></div>
+        <div class="card"><div class="row between" style="flex-wrap:wrap;gap:8px"><div><h3>Cashflow</h3><div class="muted" style="font-size:12px">Banksaldo + onderhanden werk + debiteuren − crediteuren − 2× maandkosten. Positief = na twee maanden vaste kosten nog geld over.</div></div><div class="muted" style="font-size:12px" id="fin-cf-per"></div></div>
           <div class="grid4" id="fin-cf-kpis" style="margin-top:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div></div>
-        <div class="card"><h3>Cashflow bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Banksaldo, debiteuren en crediteuren komen later automatisch uit Exact. Maandkosten vul je zelf in.</p>
-          <form class="f" id="fin-cf-form" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"><label>Stand per<input id="fcf-datum" type="date" required></label><label>Banksaldo (€)<input id="fcf-bank" type="number" step="any" required></label><label>Debiteuren (€)<input id="fcf-deb" type="number" step="any" required></label><label>Crediteuren (€)<input id="fcf-cred" type="number" step="any" required></label><label>Maandkosten (€)<input id="fcf-mk" type="number" step="any" required></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
+        <div class="card"><h3>Cashflow bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Banksaldo, debiteuren en crediteuren komen later automatisch uit Exact. Onderhanden werk en maandkosten vul je zelf in.</p>
+          <form class="f" id="fin-cf-form" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"><label>Stand per<input id="fcf-datum" type="date" required></label><label>Banksaldo (€)<input id="fcf-bank" type="number" step="any" required></label><label>Onderhanden werk (€)<input id="fcf-ohw" type="number" step="any" required></label><label>Debiteuren (€)<input id="fcf-deb" type="number" step="any" required></label><label>Crediteuren (€)<input id="fcf-cred" type="number" step="any" required></label><label>Maandkosten (€)<input id="fcf-mk" type="number" step="any" required></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
           <div class="tbl" id="fin-cf-hist" style="margin-top:14px"></div></div>
         <div class="card"><h3 id="fin-ytd-t">Cijfers</h3><div class="muted" style="font-size:12px" id="fin-ytd-sub"></div>
           <div class="seg" id="fin-per" style="margin:12px 0 4px"></div></div>
@@ -1440,7 +1440,7 @@ function finCalc(r){const g=k=>+(r&&r[k])||0;const o={};FIN_REGELS.forEach(([k])
   o.bruto=o.omzet-o.kostprijs;o.kosten=FIN_KOSTEN.reduce((a,k)=>a+o[k],0);o.bedr=o.bruto-o.kosten;o.res=o.bedr-o.rente;o.ebitda=o.res+o.rente+o.afschr;return o}
 function finSom(soort,maanden){const t={};maanden.forEach(m=>{const d=FIN.docs.find(x=>x.id===soort+"-"+m);if(d)FIN_REGELS.forEach(([k])=>t[k]=(t[k]||0)+(+(d.regels||{})[k]||0))});return finCalc(t)}
 const finHas=(soort,m)=>FIN.docs.some(x=>x.id===soort+"-"+m);
-const finCF=c=>(+c.bank||0)+(+c.deb||0)-(+c.cred||0)-2*(+c.mk||0);
+const finCF=c=>(+c.bank||0)+(+c.ohw||0)+(+c.deb||0)-(+c.cred||0)-2*(+c.mk||0);
 function finLockHtml(){
   if(!S.canEdit)return `<div class="card"><div class="empty">Financieel is alleen voor Stijn, Sil, Timo en Jeroen.</div></div>`;
   return `<div class="card" style="max-width:420px"><h3>Vul je pincode opnieuw in</h3><p class="muted" style="font-size:13px;margin:2px 0 12px">Financiële cijfers zijn extra afgeschermd. Na 30 minuten of bij herladen vergrendelt de pagina weer.</p>
@@ -1457,7 +1457,7 @@ document.addEventListener("submit",async e=>{
     if(!FIN.sub&&S.db){FIN.sub=true;S.db.collection("financieel").onSnapshot(snap=>{FIN.docs=snap.docs.map(d=>({id:d.id,...d.data()}));if(document.activeElement!==$("fin-toel-txt"))FIN.toelM=null;render()},()=>toast("Financiële cijfers laden lukte niet."))}
     $("fcf-datum").value=today();$("fin-inv-maand").value=S.month;finFields();render();return}
   if(e.target.id==="fin-cf-form"){e.preventDefault();if(!FIN.open)return;
-    const d={soort:"cashflow",datum:$("fcf-datum").value,bank:+$("fcf-bank").value||0,deb:+$("fcf-deb").value||0,cred:+$("fcf-cred").value||0,mk:+$("fcf-mk").value||0,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
+    const d={soort:"cashflow",datum:$("fcf-datum").value,bank:+$("fcf-bank").value||0,ohw:+$("fcf-ohw").value||0,deb:+$("fcf-deb").value||0,cred:+$("fcf-cred").value||0,mk:+$("fcf-mk").value||0,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(!d.datum)return;if(await save("financieel","cashflow-"+d.datum,d))toast("Cashflow opgeslagen per "+dLabel(d.datum));return}
   if(e.target.id==="fin-inv-form"){e.preventDefault();if(!FIN.open)return;const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;if(!m)return;
     const d0=FIN.docs.find(x=>x.id===soort+"-"+m);const regels={};FIN_REGELS.forEach(([k])=>{const v=$("fin-r-"+k).value;if(v!=="")regels[k]=+v});
@@ -1477,11 +1477,11 @@ function renderFin(){
   // Cashflow
   const cf=FIN.docs.filter(d=>d.soort==="cashflow").sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));const c=cf[0];
   $("fin-cf-per").textContent=c?"Stand per "+dLabel(c.datum)+(c.door?" · "+c.door:""):"";
-  if(c){const v=finCF(c);$("fin-cf-kpis").innerHTML=[["Banksaldo","",c.bank],["Debiteuren","+ ",c.deb],["Crediteuren","− ",c.cred],["2× maandkosten","− ",2*(+c.mk||0)]].map(([k,t,n])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num" style="white-space:nowrap;font-size:22px">${t}${eur(+n)}</div></div>`).join("")+
+  if(c){const v=finCF(c);$("fin-cf-kpis").innerHTML=[["Banksaldo","",c.bank],["Onderhanden werk","+ ",c.ohw||0],["Debiteuren","+ ",c.deb],["Crediteuren","− ",c.cred],["2× maandkosten","− ",2*(+c.mk||0)]].map(([k,t,n])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num" style="white-space:nowrap;font-size:22px">${t}${eur(+n)}</div></div>`).join("")+
       `<div class="card" style="border-color:var(--${v>=0?"good":"bad"})"><div class="eyebrow">Beschikbaar</div><div class="stat num" style="white-space:nowrap;font-size:22px;color:var(--${v>=0?"good":"bad"})">${eur(v)}</div></div>`}
   else $("fin-cf-kpis").innerHTML=`<div class="empty" style="grid-column:1/-1">Nog geen stand ingevuld.</div>`;
   if(c&&$("fcf-mk").value===""&&document.activeElement!==$("fcf-mk"))$("fcf-mk").value=c.mk??"";
-  $("fin-cf-hist").innerHTML=cf.length?`<table><thead><tr><th>Stand per</th><th class="r">Bank</th><th class="r">Debiteuren</th><th class="r">Crediteuren</th><th class="r">Maandkosten</th><th class="r">Beschikbaar</th><th>Door</th><th></th></tr></thead><tbody>${cf.map(x=>{const v=finCF(x);return `<tr><td class="num">${dLabel(x.datum)}</td><td class="r num">${eur(x.bank)}</td><td class="r num">${eur(x.deb)}</td><td class="r num">${eur(x.cred)}</td><td class="r num">${eur(x.mk)}</td><td class="r num" style="color:var(--${v>=0?"good":"bad"})"><b>${eur(v)}</b></td><td>${esc(x.door||"")}</td><td class="r"><button class="btn ghost" data-fin-del="${esc(x.id)}" style="padding:4px 10px;font-size:12px">Verwijderen</button></td></tr>`}).join("")}</tbody></table>`:"";
+  $("fin-cf-hist").innerHTML=cf.length?`<table><thead><tr><th>Stand per</th><th class="r">Bank</th><th class="r">OHW</th><th class="r">Debiteuren</th><th class="r">Crediteuren</th><th class="r">Maandkosten</th><th class="r">Beschikbaar</th><th>Door</th><th></th></tr></thead><tbody>${cf.map(x=>{const v=finCF(x);return `<tr><td class="num">${dLabel(x.datum)}</td><td class="r num">${eur(x.bank)}</td><td class="r num">${x.ohw==null?'<span class="muted">–</span>':eur(x.ohw)}</td><td class="r num">${eur(x.deb)}</td><td class="r num">${eur(x.cred)}</td><td class="r num">${eur(x.mk)}</td><td class="r num" style="color:var(--${v>=0?"good":"bad"})"><b>${eur(v)}</b></td><td>${esc(x.door||"")}</td><td class="r"><button class="btn ghost" data-fin-del="${esc(x.id)}" style="padding:4px 10px;font-size:12px">Verwijderen</button></td></tr>`}).join("")}</tbody></table>`:"";
   // Cijfers: per maand of YTD, per begroting uitklapbaar, met trendgrafieken
   const y=S.month.slice(0,4),alle=[...Array(12)].map((_,i)=>y+"-"+pad(i+1)),gm=alle.filter(x=>finHas("werkelijk",x));
   const mn=x=>MONTHS[+x.slice(5)-1],Mn=x=>mn(x).charAt(0).toUpperCase()+mn(x).slice(1);
