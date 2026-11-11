@@ -1535,7 +1535,7 @@ function renderFin(){
   $("fin-ytd-t").textContent="Cijfers "+y;
   $("fin-ytd-sub").innerHTML=gm.length?`Gerealiseerd tegenover prognose (begroting): ${esc(perL)}.`:`Nog geen gerealiseerde cijfers voor ${y}. Vul ze onderaan in.`;
   const W=finSom("werkelijk",per);
-  const ROWS=[["omzet","Netto-omzet",1],["kostprijs","Kostprijs van de omzet",-1],["bruto","Brutomarge",1,"sub",1],...FIN_KOSTEN.map(k=>[k,FIN_REGELS.find(r=>r[0]===k)[1],-1]),["kosten","Som der bedrijfskosten",-1,"sub"],["bedr","Bedrijfsresultaat",1,"sub",1],["rente","Rentelasten en soortgelijke kosten",-1,"it"],["res","Resultaat uit gewone bedrijfsuitoefening",1,0,1],["ebitda","EBITDA",1,0,1]];
+  const ROWS=[["omzet","Netto-omzet",1],["kostprijs","Kostprijs van de omzet",-1],["bruto","Brutomarge",1,"sub",1],...FIN_KOSTEN.map(k=>[k,FIN_REGELS.find(r=>r[0]===k)[1],-1]),["kosten","Som der bedrijfskosten",-1,"sub"],["bedr","Bedrijfsresultaat",1,0,1],["rente","Rentelasten en soortgelijke kosten",-1,"it"],["res","Resultaat uit gewone bedrijfsuitoefening",1,"sub",1],["ebitda","EBITDA",1,0,1]];
   const pv=(v,o)=>o?v/o*100:null,pS=p=>p==null?"–":(Math.round(p*10)/10).toLocaleString("nl-NL")+"%";
   const tbl=(B)=>`<div class="tbl"><table class="fin-tb"><thead><tr><th>Resultatenrekening</th><th class="r">Gerealiseerd</th><th class="r">%</th><th class="r">Prognose</th><th class="r">%</th><th class="r">Afwijking</th></tr></thead><tbody>${ROWS.map(([k,l,sg,cls,key])=>{
       const w=W[k],b=B[k],d=w-b,pw=k==="omzet"||k==="kostprijs"?null:pv(w,W.omzet),pb=k==="omzet"||k==="kostprijs"?null:pv(b,B.omzet);
