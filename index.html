@@ -513,10 +513,13 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <section data-p="socials" hidden>
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Socials</h1></div></div>
       <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
-      <div class="card"><h3>Views per maand</h3><div class="muted" style="font-size:12px">Alle kanalen samen. Doorgetrokken = gerealiseerd, stippellijn = target.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:minmax(0,640px)"></div></div>
-      <div class="card"><h3>Views invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand, alle kanalen samen. Voorlopig handmatig.</p>
-        <form class="f" id="soc-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Maand<input id="soc-maand" type="month" required></label><label>Views<input id="soc-views" type="number" min="0" step="any"></label><label>Target views<input id="soc-target" type="number" min="0" step="any"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
-        <div class="tbl" id="soc-list" style="margin-top:12px"></div></div>
+      <div class="grid4" id="soc-kpis" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div>
+      <div class="card"><h3>Per maand</h3><div class="muted" style="font-size:12px">Alle kanalen samen. Doorgetrokken = gerealiseerd, stippellijn = target.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div></div>
+      <div class="card tbl" id="soc-list"></div>
+      <div class="card"><h3>Invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: views en nieuwe volgers per kanaal (afgelopen 30 dagen). Views totaal = som van de kanalen.</p>
+        <form class="f" id="soc-form" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))"><label>Maand<input id="soc-maand" type="month" required></label><label>Target views<input id="soc-target" type="number" min="0" step="any"></label>
+          <div class="full" id="soc-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px"></div>
+          <div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form></div>
     </section>
 
     <section data-p="kosten" hidden>
@@ -1596,16 +1599,31 @@ function renderTrends(){if(!$("ov-trends"))return;const mnd=trendMaanden();const
   const R=[["Leads (incl. offerteaanvragen)","leads","fa_leads",s=>s.leads,fmtAantal],["Intakes","intakes","fa_intakes",s=>s.intakes,fmtAantal],["Voortrajecten","voortrajecten","fa_voortrajecten",s=>s.voortrajecten,fmtAantal],["Bruto marge verkocht","marge","fa_bruto",s=>s.bruto,eurK]];
   $("ov-trends").innerHTML=R.map(([t,f,tf,c,fmt])=>trendLijn(t,mnd,mnd.map(m=>val(m,f,c)),mnd.map(m=>tg(m,f,tf)),fmt)).join("");
   $("ov-trends-note").textContent=`Vanaf ${monthLabel(KPI_LIVE_VANAF)} rekent de cockpit zelf mee, ook de lopende maand (${monthLabel(curMonth())} loopt nog). Eerdere maanden komen uit de maandpresentaties.`}
+const KANALEN=[["instagram","Instagram"],["tiktok","TikTok"],["youtube","YouTube"],["facebook","Facebook"]];
+const socNum=v=>v==null||v===""?null:+v;
+// Totaal views: som van de kanalen als die er zijn, anders het losse totaal (historie).
+const socViews=d=>{if(!d)return null;const k=d.kanalen||{};const vs=KANALEN.map(([c])=>socNum((k[c]||{}).views)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0):socNum(d.views)};
+const socVolgers=d=>{if(!d)return null;const k=d.kanalen||{};const vs=KANALEN.map(([c])=>socNum((k[c]||{}).volgers)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0):null};
+const fmtKort=x=>x>=1e6?(Math.round(x/1e5)/10).toLocaleString("nl-NL")+"M":x>=1000?Math.round(x/1000).toLocaleString("nl-NL")+"k":fmtAantal(x);
+function socFields(){const d=(S.socials||{})[$("soc-maand").value]||{},k=d.kanalen||{};
+  $("soc-fields").innerHTML=KANALEN.map(([c,l])=>`<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px"><b style="font-size:13px">${l}</b><label>Views<input id="soc-${c}-v" type="number" min="0" step="any" value="${(k[c]||{}).views??""}"></label><label>Nieuwe volgers<input id="soc-${c}-f" type="number" step="any" value="${(k[c]||{}).volgers??""}"></label></div>`).join("");
+  $("soc-target").value=d.viewsTarget??""}
 function renderSocials(){if(!$("soc-chart"))return;const SO=S.socials||{};const mnd=trendMaanden(Object.keys(SO));
-  const v=m=>SO[m]&&SO[m].views!=null&&SO[m].views!==""?+SO[m].views:null,t=m=>SO[m]&&SO[m].viewsTarget!=null&&SO[m].viewsTarget!==""?+SO[m].viewsTarget:null;
-  $("soc-chart").innerHTML=Object.keys(SO).length?trendLijn("Views",mnd,mnd.map(v),mnd.map(t),x=>x>=1e6?(Math.round(x/1e5)/10).toLocaleString("nl-NL")+"M":x>=1000?Math.round(x/1000).toLocaleString("nl-NL")+"k":fmtAantal(x)):`<div class="empty">Nog geen views ingevuld.</div>`;
-  if(!$("soc-maand").value)$("soc-maand").value=curMonth();
-  const rows=Object.entries(SO).sort((a,b)=>b[0].localeCompare(a[0]));
-  $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th><th class="r">Views</th><th class="r">Target</th><th>Door</th></tr></thead><tbody>${rows.map(([m,d])=>`<tr><td>${esc(monthLabel(m))}</td><td class="r num">${d.views!=null?fmtAantal(d.views):"–"}</td><td class="r num">${d.viewsTarget!=null?fmtAantal(d.viewsTarget):"–"}</td><td>${esc(d.door||"")}</td></tr>`).join("")}</tbody></table>`:""}
-document.addEventListener("change",e=>{if(e.target.id!=="soc-maand")return;const d=(S.socials||{})[e.target.value]||{};$("soc-views").value=d.views??"";$("soc-target").value=d.viewsTarget??""});
+  const t=m=>SO[m]?socNum(SO[m].viewsTarget):null;
+  $("soc-chart").innerHTML=Object.keys(SO).length?trendLijn("Views",mnd,mnd.map(m=>socViews(SO[m])),mnd.map(t),fmtKort)+trendLijn("Nieuwe volgers",mnd,mnd.map(m=>socVolgers(SO[m])),mnd.map(()=>null),fmtAantal):`<div class="empty">Nog geen cijfers ingevuld.</div>`;
+  const rows=Object.entries(SO).sort((a,b)=>b[0].localeCompare(a[0]));const laatst=rows[0];
+  $("soc-kpis").innerHTML=laatst?[["Views "+monthLabel(laatst[0]),socViews(laatst[1]),laatst[1].viewsTarget?"target "+fmtKort(laatst[1].viewsTarget):""],["Nieuwe volgers",socVolgers(laatst[1]),"alle kanalen"],...KANALEN.map(([c,l])=>{const x=((laatst[1].kanalen||{})[c])||{};return [l,socNum(x.views),x.volgers!=null?"+"+fmtAantal(x.volgers)+" volgers":""]})]
+    .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${esc(k)}</div><div class="stat num">${v==null?"–":fmtKort(v)}</div><div class="muted" style="font-size:12px">${esc(sub)}</div></div>`).join(""):"";
+  const c=(v)=>`<td class="r num">${v==null?'<span class="muted">–</span>':fmtAantal(v)}</td>`;
+  $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th>${KANALEN.map(([,l])=>`<th class="r">${l}</th>`).join("")}<th class="r">Views totaal</th><th class="r">Target</th><th class="r">Nieuwe volgers</th><th>Door</th></tr></thead><tbody>${rows.map(([m,d])=>{const k=d.kanalen||{};
+    return `<tr><td>${esc(monthLabel(m))}</td>${KANALEN.map(([q])=>{const x=k[q]||{};return `<td class="r num">${x.views==null?'<span class="muted">–</span>':fmtAantal(x.views)}${x.volgers!=null?`<div class="muted" style="font-size:11px">+${fmtAantal(x.volgers)} volgers</div>`:""}</td>`}).join("")}<td class="r num"><b>${socViews(d)==null?"–":fmtAantal(socViews(d))}</b></td>${c(socNum(d.viewsTarget))}${c(socVolgers(d))}<td>${esc(d.door||"")}</td></tr>`}).join("")}</tbody></table>`:"";
+  if(!$("soc-maand").value){$("soc-maand").value=curMonth();socFields()}}
+document.addEventListener("change",e=>{if(e.target.id==="soc-maand")socFields()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="soc-form")return;e.preventDefault();const m=$("soc-maand").value;if(!m)return;
-  const num=id=>$(id).value===""?null:+$(id).value;const d={maand:m,views:num("soc-views"),viewsTarget:num("soc-target"),door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
-  if(await save("socials",m,d))toast("Views "+monthLabel(m)+" opgeslagen")});
+  const num=id=>$(id).value===""?null:+$(id).value;const old=(S.socials||{})[m]||{};const kanalen={};
+  KANALEN.forEach(([c])=>{const v=num("soc-"+c+"-v"),f=num("soc-"+c+"-f");if(v!=null||f!=null)kanalen[c]={views:v,volgers:f}});
+  const d={...old,maand:m,kanalen,viewsTarget:num("soc-target"),door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};d.views=socViews(d);
+  if(await save("socials",m,d))toast("Socials "+monthLabel(m)+" opgeslagen")});
 
 /* ---------- Boot ---------- */
 async function boot(){
