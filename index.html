@@ -516,6 +516,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="grid4" id="soc-kpis" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div>
       <div class="card"><h3>Per maand</h3><div class="muted" style="font-size:12px">Alle kanalen samen. Doorgetrokken = gerealiseerd, stippellijn = target.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div></div>
       <div class="card tbl" id="soc-list"></div>
+      <div id="soc-top"></div>
       <div class="card"><h3>Invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: views en nieuwe volgers per kanaal (afgelopen 30 dagen). Views totaal = som van de kanalen.</p>
         <form class="f" id="soc-form" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))"><label>Maand<input id="soc-maand" type="month" required></label><label>Target views<input id="soc-target" type="number" min="0" step="any"></label>
           <div class="full" id="soc-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px"></div>
@@ -1617,6 +1618,12 @@ function renderSocials(){if(!$("soc-chart"))return;const SO=S.socials||{};const 
   const c=(v)=>`<td class="r num">${v==null?'<span class="muted">–</span>':fmtAantal(v)}</td>`;
   $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th>${KANALEN.map(([,l])=>`<th class="r">${l}</th>`).join("")}<th class="r">Views totaal</th><th class="r">Target</th><th class="r">Nieuwe volgers</th><th>Door</th></tr></thead><tbody>${rows.map(([m,d])=>{const k=d.kanalen||{};
     return `<tr><td>${esc(monthLabel(m))}</td>${KANALEN.map(([q])=>{const x=k[q]||{};return `<td class="r num">${x.views==null?'<span class="muted">–</span>':fmtAantal(x.views)}${x.volgers!=null?`<div class="muted" style="font-size:11px">+${fmtAantal(x.volgers)} volgers</div>`:""}</td>`}).join("")}<td class="r num"><b>${socViews(d)==null?"–":fmtAantal(socViews(d))}</b></td>${c(socNum(d.viewsTarget))}${c(socVolgers(d))}<td>${esc(d.door||"")}</td></tr>`}).join("")}</tbody></table>`:"";
+  // Top video's per kanaal: laatste maand met een lijst
+  const metTop=rows.filter(([,d])=>d.top&&Object.keys(d.top).length);
+  $("soc-top").innerHTML=metTop.length?(([m,d])=>KANALEN.filter(([c])=>(d.top[c]||[]).length).map(([c,l])=>{const L=d.top[c];
+    return `<div class="card tbl"><h3>Top ${L.length} video's ${esc(l)} · ${esc(monthLabel(m))}</h3><div class="muted" style="font-size:12px;margin-bottom:8px">Engagement = (likes + reacties + reposts + gedeeld) / views.${d.topNoot?" "+esc(d.topNoot):""}</div>
+      <table><thead><tr><th>#</th><th>Video</th><th>Geplaatst</th><th class="r">Views</th><th class="r">Likes</th><th class="r">Reacties</th><th class="r">Reposts</th><th class="r">Gedeeld</th><th class="r">Engagement</th></tr></thead><tbody>${L.map((v,i)=>{const eng=v.views?((+v.likes||0)+(+v.reacties||0)+(+v.reposts||0)+(+v.gedeeld||0))/v.views*100:null;
+        return `<tr><td class="num muted">${i+1}</td><td>${esc(v.titel)}</td><td class="num">${esc(v.geplaatst||"")}</td><td class="r num"><b>${fmtAantal(v.views)}</b></td><td class="r num">${fmtAantal(v.likes||0)}</td><td class="r num">${fmtAantal(v.reacties||0)}</td><td class="r num">${fmtAantal(v.reposts||0)}</td><td class="r num">${fmtAantal(v.gedeeld||0)}</td><td class="r num">${eng==null?"–":(Math.round(eng*10)/10).toLocaleString("nl-NL")+"%"}</td></tr>`}).join("")}</tbody></table></div>`}).join(""))(metTop[0]):"";
   if(!$("soc-maand").value){$("soc-maand").value=curMonth();socFields()}}
 document.addEventListener("change",e=>{if(e.target.id==="soc-maand")socFields()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="soc-form")return;e.preventDefault();const m=$("soc-maand").value;if(!m)return;
