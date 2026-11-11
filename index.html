@@ -1069,7 +1069,7 @@ function renderPortfolio(o){
     sub[pre+y+"Ong"]=J.aantal!=null?J.aantal+" kansen met "+wat+" in "+y:"";sub[pre+y+"Gew"]="verwachte waarde × slagingskans"}
   const prevW=r8[r8.length-2],w8=r8[0];
   const card=k=>{const [,nm,c,,det]=SER[k];return `<button class="card click-card pcard" data-od="${det}"><div class="row between"><span class="eyebrow">${/^(fc|rl)/.test(k)?nm.replace(/ \d{4}/,""):nm}</span><i class="sw" style="background:${c}"></i></div>
-    <div class="stat num">${cur[k]==null?"–":eurK(cur[k])}</div><div class="muted" style="font-size:12px">${sub[k]}</div>
+    <div class="stat num">${cur[k]==null?"–":eurK(cur[k])}</div>${/^(fc|rl)/.test(k)?"":`<div class="muted" style="font-size:12px">${sub[k]}</div>`}
     ${spark(r8,k,c)}
     <div class="deltas">${deltaHtml(cur[k],prevW&&prevW[k],"t.o.v. vorige week ("+wkLabel(prevW.key)+")")}<br>${deltaHtml(cur[k],w8&&w8[k],"t.o.v. 8 weken terug ("+wkLabel(w8.key)+")")}</div></button>`};
   const z=f.zonderDatum;
