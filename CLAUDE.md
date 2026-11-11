@@ -28,7 +28,7 @@ Lees dit eerst. Stijn en Jeroen bouwen allebei aan dit dashboard, elk in een eig
 - `odoo` (id = datum): dagoverzicht uit Odoo, incl. `forecast.verkoop` en `forecast.realisatie` per jaar (2026, 2027) en `forecast.zonderDatum`.
 - `odoo_trend` (id = datum): dagstand. In de app per ISO-week getoond (laatste stand van de week).
   Velden: `offerteportefeuille`, `fc2026Ong/Gew`, `fc2027Ong/Gew` (verkoop), `rl2026Ong/Gew`, `rl2027Ong/Gew` (realisatie).
-- `orderportefeuille` (id = datum): handmatige weekstand door admins: `{datum, bedrag, notitie, door}`.
+- `orderportefeuille` (id = datum): handmatige weekstand door admins: `{datum, bedrag, notitie, door}`. Plus id `target` (zonder `datum`): `{target, deadline, startdatum, door}`. Schema = rechte lijn van de stand op `startdatum` naar `target` op `deadline`; getoond op Targets en bij de orderportefeuille op Offertes & pijplijn.
 - `data/targets/maanden`: targets per maand.
 - `kosten`: marketingkosten `{maand: 'YYYY-MM', bron, bedrag, omschrijving}`. Handmatig (id `hand-…`, alleen admins) of later uit Exact via `ingest` (id moet beginnen met `exact-`).
 - `financieel`: alleen admins. id's: `cashflow-YYYY-MM-DD` `{datum, bank, deb, cred, mk}` (beschikbaar = bank + deb − cred − 2× mk); `werkelijk-YYYY-MM`, `begroting-50k-YYYY-MM`, `begroting-100k-YYYY-MM` met `{soort, maand, regels:{omzet, kostprijs, uitbesteed, lonen, sociaal, afschr, personeel, kantoor, verkoop, auto, algemeen, rente}}`; `werkelijk` heeft ook `toelichting` (vrije tekst per maand, los invulveld onder de cijfers) en `toelichtingDoor`. Begroting 2026 en gerealiseerd jan t/m okt 2026 zijn op 9 en 11 nov uit Excel geïmporteerd. Nu handmatig; later bank/deb/cred en `werkelijk` uit Exact (dan `ingest` uitbreiden voor deze collectie).

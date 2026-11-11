@@ -568,6 +568,10 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
         <form class="f" id="tg-form" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))"></form>
         <div class="row" style="margin-top:16px"><button class="btn primary" id="tg-save" type="button">Targets opslaan</button><button class="btn ghost" id="tg-copy" type="button">Neem vorige maand over</button></div>
       </div>
+      <div class="card"><h3>Target orderportefeuille</h3><p class="muted" style="font-size:12px;margin:2px 0 12px">Eén target voor de totale orderportefeuille (bruto marge van getekende opdrachten die nog uitgevoerd moeten worden), te halen uiterlijk op de einddatum. De lijn naar het target loopt recht van de stand op de startdatum naar het target op de einddatum.</p>
+        <div id="ot-voortgang"></div>
+        <form class="f" id="ot-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));margin-top:14px"><label>Target (€)<input id="ot-target" type="number" min="0" step="any" required></label><label>Te halen op<input id="ot-deadline" type="date" required></label><label>Rekenen vanaf<input id="ot-start" type="date" required></label><div class="full row"><button class="btn primary" type="submit" id="ot-save">Target opslaan</button><span class="muted" style="font-size:12px" id="ot-note"></span></div></form>
+      </div>
     </section>
   </div></main>
 </div>
@@ -1043,7 +1047,8 @@ function renderPortfolio(o){
   const f=o&&o.forecast||{};const V=fcBak(f,"vk"),R=fcBak(f,"rl");
   const cur={offerteportefeuille:o?o.portefeuilleWaarde:null};
   const sub={offerteportefeuille:o?(o.portefeuilleAantal??0)+" open offertes, zonder concepten":"",};
-  {const lo=latestOrd();cur.ord=lo?+lo.bedrag:null;sub.ord=lo?"stand "+wkLabel(isoWeek(lo.datum).key)+" ("+dLabel(lo.datum)+")"+(lo.door?" · "+lo.door:""):"nog niet ingevuld"}
+  {const lo=latestOrd();cur.ord=lo?+lo.bedrag:null;sub.ord=lo?"stand "+wkLabel(isoWeek(lo.datum).key)+" ("+dLabel(lo.datum)+")"+(lo.door?" · "+lo.door:""):"nog niet ingevuld";
+    const v=ordVoortgang();if(v&&v.diff!=null)sub.ord+=`<br>Target ${eurK(v.t.target)}: <b style="color:var(--${v.diff>=0?"good":"bad"})">${v.diff>=0?"voor":"achter"} op schema (${v.diff>0?"+":""}${eurK(v.diff)})</b>, had vandaag ${eurK(v.verwacht)} moeten zijn`}
   for(const y of ["2026","2027"])for(const [pre,B,wat] of [["fc",V,"sluitingsdatum"],["rl",R,"opleverdatum"]]){const J=B[y]||{};
     cur[pre+y+"Ong"]=J.ongewogen??null;cur[pre+y+"Gew"]=J.gewogen??null;
     sub[pre+y+"Ong"]=J.aantal!=null?J.aantal+" kansen met "+wat+" in "+y:"";sub[pre+y+"Gew"]="verwachte waarde × slagingskans"}
@@ -1073,6 +1078,38 @@ function renderPortfolio(o){
   </section>`;
 }
 function today_(){return today()}
+/* ---------- Target orderportefeuille ----------
+   Opgeslagen in collectie 'orderportefeuille' met id 'target' (zonder veld 'datum', zodat het niet als weekstand telt).
+   Pad: rechte lijn van de stand op de startdatum naar het target op de einddatum. */
+const ordTarget=()=>{const t=S.orders.find(x=>x.id==="target");return t&&+t.target?t:null};
+const ordStandOp=d=>{const a=[...ordersAll()].sort((x,y)=>x.datum.localeCompare(y.datum));const v=a.filter(x=>x.datum<=d);return (v.length?v[v.length-1]:a[0])||null};
+const dagen=(a,b)=>Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/864e5);
+function ordVoortgang(){const t=ordTarget();if(!t)return null;const lo=latestOrd();const st=ordStandOp(t.startdatum);
+  const vandaag=today(),startW=st?+st.bedrag:0,tot=Math.max(1,dagen(t.startdatum,t.deadline)),gedaan=Math.min(tot,Math.max(0,dagen(t.startdatum,vandaag)));
+  const verwacht=startW+(+t.target-startW)*gedaan/tot,stand=lo?+lo.bedrag:null,diff=stand==null?null:stand-verwacht;
+  const wekenLeft=Math.max(0,dagen(vandaag,t.deadline))/7,nodig=stand==null?null:Math.max(0,+t.target-stand);
+  return {t,lo,startW,verwacht,stand,diff,nodig,perWeek:nodig!=null&&wekenLeft>=1?nodig/wekenLeft:null,wekenLeft,klaar:vandaag>t.deadline}}
+function ordVoortgangHtml(){const v=ordVoortgang();if(!v)return `<div class="empty">Nog geen target ingesteld.</div>`;
+  const {t,stand,verwacht,diff}=v;const pct=x=>Math.max(0,Math.min(100,x/(+t.target)*100));const cls=diff==null?"none":diff>=0?"good":"bad";
+  const label=diff==null?"Nog geen stand":diff>=0?"Voor op schema":"Achter op schema";
+  return `<div class="grid4" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
+    <div class="card"><div class="eyebrow">Huidige stand</div><div class="stat num">${stand==null?"–":eurK(stand)}</div><div class="muted" style="font-size:12px">${v.lo?"per "+dLabel(v.lo.datum):"nog niet ingevuld"}</div></div>
+    <div class="card"><div class="eyebrow">Had vandaag moeten zijn</div><div class="stat num">${eurK(verwacht)}</div><div class="muted" style="font-size:12px">om op schema te lopen</div></div>
+    <div class="card"><div class="eyebrow">Target</div><div class="stat num">${eurK(t.target)}</div><div class="muted" style="font-size:12px">uiterlijk ${dLabel(t.deadline)} ${t.deadline.slice(0,4)}</div></div>
+    <div class="card"><div class="eyebrow">Verschil met schema</div><div class="stat num" style="color:var(--${cls==="none"?"muted":cls})">${diff==null?"–":(diff>0?"+":"")+eurK(diff)}</div><div style="font-size:12px"><span class="status ${cls}" style="padding:1px 8px">${label}</span></div></div></div>
+    <div style="margin-top:14px"><div class="t" style="position:relative;height:12px;border-radius:6px;background:var(--line);overflow:visible"><i style="position:absolute;left:0;top:0;bottom:0;border-radius:6px;width:${stand==null?0:pct(stand)}%;background:var(--${cls==="none"?"blue":cls})"></i><b title="Had vandaag moeten zijn" style="position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--fg);left:${pct(verwacht)}%"></b></div>
+    <div class="row between muted" style="font-size:12px;margin-top:6px"><span>${stand==null?"":Math.round(stand/(+t.target)*100)+"% van het target"}</span><span>streepje = waar we vandaag hadden moeten staan</span></div></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">${v.klaar?"De einddatum is verstreken.":v.nodig?`Nog ${eurK(v.nodig)} te gaan in ${Math.round(v.wekenLeft)} weken${v.perWeek?`, gemiddeld ${eurK(v.perWeek)} per week`:""}.`:"Target gehaald."} Startpunt: ${eurK(v.startW)} op ${dLabel(t.startdatum)}.</p>`}
+function renderOrdTarget(){if(!$("ot-voortgang"))return;$("ot-voortgang").innerHTML=ordVoortgangHtml();
+  const act=document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("ot-");const t=S.orders.find(x=>x.id==="target");
+  if(!act){$("ot-target").value=t?t.target??"":"";$("ot-deadline").value=t?t.deadline:"2026-12-31";const f=[...ordersAll()].map(x=>x.datum).sort()[0];$("ot-start").value=t?t.startdatum:(f||today())}
+  ["ot-target","ot-deadline","ot-start","ot-save"].forEach(id=>$(id).disabled=!S.canEdit);
+  $("ot-note").textContent=S.canEdit?(t&&t.door?"Ingesteld door "+t.door+".":""):"Alleen Stijn, Sil, Timo en Jeroen stellen dit target in."}
+document.addEventListener("submit",async e=>{if(e.target.id!=="ot-form")return;e.preventDefault();
+  const d={target:+$("ot-target").value||0,deadline:$("ot-deadline").value,startdatum:$("ot-start").value,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
+  if(!d.target||!d.deadline||!d.startdatum)return;if(d.startdatum>=d.deadline)return toast("De startdatum moet voor de einddatum liggen.");
+  if(await save("orderportefeuille","target",d))toast("Target orderportefeuille opgeslagen")});
+
 function fcTbl(obj,keyName,tot){return `<div class="tbl"><table><thead><tr><th>${keyName}</th><th class="r">Kansen</th><th class="r">Ongewogen</th><th class="r">Gewogen</th></tr></thead><tbody>${Object.entries(obj||{}).sort((a,b)=>b[1].gewogen-a[1].gewogen).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="r num">${v.aantal}</td><td class="r num">${eur(v.ongewogen)}</td><td class="r num"><b>${eur(v.gewogen)}</b></td></tr>`).join("")}<tr><td><b>Totaal</b></td><td class="r num">${tot.aantal??""}</td><td class="r num"><b>${eur(tot.ongewogen)}</b></td><td class="r num"><b>${eur(tot.gewogen)}</b></td></tr></tbody></table></div>`}
 function forecastDetail(t,y){const f=(S.odoo||{}).forecast||{};const J=fcBak(f,t)[y]||{};const rl=t==="rl";
   const perFase=FASES.reduce((a,fz)=>{if(J.perFase&&J.perFase[fz])a[fz]=J.perFase[fz];return a},{});
@@ -1122,7 +1159,7 @@ function renderHello(){renderMe();
   $("hello-sub").textContent=new Date().toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   const s=stats(curMonth());$("c-leads").textContent=s.leads;$("c-intakes").textContent=s.intakes;
 }
-let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOdoo();renderFin();revealAll()})}
+let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOrdTarget();renderOdoo();renderFin();revealAll()})}
 function showTab(t,push){if(!TABS.includes(t))t="overzicht";S.tab=t;document.querySelectorAll("section[data-p]").forEach(s=>s.hidden=s.dataset.p!==t);
   document.querySelectorAll("#menu button,.subnav button").forEach(b=>{if(b.dataset.t===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   document.querySelectorAll("#bottom button").forEach(b=>{if(b.dataset.t===t||(b.dataset.g&&b.dataset.g===GROEP[t]))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
