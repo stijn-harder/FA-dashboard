@@ -387,6 +387,9 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .trechter .cv{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .trechter .cv b{font-size:13px;color:var(--fg)}
 .trechter .cv .pill{border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px}
+.fin-sc>summary{cursor:pointer;font-weight:700;font-size:15px;padding:2px 0 10px;list-style:none;display:flex;align-items:center;gap:8px}.fin-sc>summary::-webkit-details-marker{display:none}.fin-sc>summary::before{content:'▸';transition:transform .2s;display:inline-block}.fin-sc[open]>summary::before{transform:rotate(90deg)}
+.fin-tb thead th{background:var(--navy,#0D1B26);color:#fff}.fin-tb td.pc{text-align:right}.fin-tb .pill{border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}.fin-tb tr.sub td{background:var(--soft)}.fin-tb tr.it td{font-style:italic;color:var(--muted)}
+.fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
 .pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
 .alertc{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--bad);background:var(--badbg);border-radius:14px;padding:14px 16px}
 .alertc.ok{border-color:var(--good);background:var(--goodbg)}
@@ -549,10 +552,12 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
         <div class="card"><h3>Cashflow bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Banksaldo, debiteuren en crediteuren komen later automatisch uit Exact. Maandkosten vul je zelf in.</p>
           <form class="f" id="fin-cf-form" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"><label>Stand per<input id="fcf-datum" type="date" required></label><label>Banksaldo (€)<input id="fcf-bank" type="number" step="any" required></label><label>Debiteuren (€)<input id="fcf-deb" type="number" step="any" required></label><label>Crediteuren (€)<input id="fcf-cred" type="number" step="any" required></label><label>Maandkosten (€)<input id="fcf-mk" type="number" step="any" required></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
           <div class="tbl" id="fin-cf-hist" style="margin-top:14px"></div></div>
-        <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3 id="fin-ytd-t">Cijfers YTD</h3><div class="muted" style="font-size:12px" id="fin-ytd-sub"></div></div><div class="seg" id="fin-scen"><button type="button" data-s="50k">Begroting 50k resultaat</button><button type="button" data-s="100k">Begroting 100k resultaat</button></div></div>
-          <div class="tbl" id="fin-ytd" style="margin-top:8px"></div></div>
+        <div class="card"><h3 id="fin-ytd-t">Cijfers</h3><div class="muted" style="font-size:12px" id="fin-ytd-sub"></div>
+          <div class="seg" id="fin-per" style="margin:12px 0 4px"></div></div>
+        <div id="fin-ytd"></div>
+        <div class="card" id="fin-toel" hidden></div>
         <div class="card"><h3>Cijfers invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: gerealiseerd (uit Exact) of de begroting. Kosten als positief bedrag. Later halen we gerealiseerd automatisch uit Exact.</p>
-          <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
+          <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><label class="full" id="fin-inv-toel-l">Toelichting kostenontwikkeling (één punt per regel)<textarea id="fin-inv-toel" rows="4"></textarea></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
       </div>
     </section>
 
@@ -1393,7 +1398,7 @@ $("snd").addEventListener("change",()=>{try{localStorage.setItem("fa-snd",$("snd
    id's: cashflow-YYYY-MM-DD, werkelijk-YYYY-MM, begroting-50k-YYYY-MM, begroting-100k-YYYY-MM. */
 const FIN_REGELS=[["omzet","Netto-omzet"],["kostprijs","Kostprijs van de omzet"],["uitbesteed","Kosten uitbesteed werk"],["lonen","Lonen en salarissen"],["sociaal","Sociale lasten"],["afschr","Afschrijvingen"],["personeel","Overige personeelskosten"],["kantoor","Kantoorkosten"],["verkoop","Verkoopkosten"],["auto","Autokosten"],["algemeen","Algemene kosten"],["rente","Rentelasten en soortgelijke kosten"]];
 const FIN_KOSTEN=["uitbesteed","lonen","sociaal","afschr","personeel","kantoor","verkoop","auto","algemeen"];
-const FIN={open:false,docs:[],scen:"50k",sub:false,timer:0};
+const FIN={open:false,docs:[],per:null,sub:false,timer:0};
 function finCalc(r){const g=k=>+(r&&r[k])||0;const o={};FIN_REGELS.forEach(([k])=>o[k]=g(k));
   o.bruto=o.omzet-o.kostprijs;o.kosten=FIN_KOSTEN.reduce((a,k)=>a+o[k],0);o.bedr=o.bruto-o.kosten;o.res=o.bedr-o.rente;o.ebitda=o.res+o.rente+o.afschr;return o}
 function finSom(soort,maanden){const t={};maanden.forEach(m=>{const d=FIN.docs.find(x=>x.id===soort+"-"+m);if(d)FIN_REGELS.forEach(([k])=>t[k]=(t[k]||0)+(+(d.regels||{})[k]||0))});return finCalc(t)}
@@ -1419,13 +1424,14 @@ document.addEventListener("submit",async e=>{
     if(!d.datum)return;if(await save("financieel","cashflow-"+d.datum,d))toast("Cashflow opgeslagen per "+dLabel(d.datum));return}
   if(e.target.id==="fin-inv-form"){e.preventDefault();if(!FIN.open)return;const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;if(!m)return;
     const regels={};FIN_REGELS.forEach(([k])=>{const v=$("fin-r-"+k).value;if(v!=="")regels[k]=+v});
-    const d={soort,maand:m,regels,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
+    const d={soort,maand:m,regels,toelichting:soort==="werkelijk"?$("fin-inv-toel").value.trim():undefined,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(await save("financieel",soort+"-"+m,d))toast($("fin-inv-soort").selectedOptions[0].textContent+" "+monthLabel(m)+" opgeslagen")}});
 function finFields(){const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;const d=FIN.docs.find(x=>x.id===soort+"-"+m);const r=(d&&d.regels)||{};
   $("fin-inv-fields").innerHTML=FIN_REGELS.map(([k,l])=>`<label>${l}<input id="fin-r-${k}" type="number" step="any" value="${r[k]??""}"></label>`).join("");
+  $("fin-inv-toel").value=(d&&d.toelichting)||"";$("fin-inv-toel-l").hidden=soort!=="werkelijk";
   $("fin-inv-note").textContent=d?`Al ingevuld${d.door?" door "+d.door:""}. Opslaan overschrijft.`:"Nog niet ingevuld."}
 document.addEventListener("change",e=>{if(e.target.id==="fin-inv-maand"||e.target.id==="fin-inv-soort")finFields()});
-document.addEventListener("click",async e=>{const b=e.target.closest("#fin-scen button");if(b){FIN.scen=b.dataset.s;renderFin();return}
+document.addEventListener("click",async e=>{const b=e.target.closest("#fin-per button");if(b){FIN.per=b.dataset.p;renderFin();return}
   if(e.target.closest("#fin-lockbtn")){finLock();return}
   const x=e.target.closest("[data-fin-del]");if(x){await del("financieel",x.dataset.finDel,x)}});
 function renderFin(){
@@ -1440,24 +1446,39 @@ function renderFin(){
   else $("fin-cf-kpis").innerHTML=`<div class="empty" style="grid-column:1/-1">Nog geen stand ingevuld.</div>`;
   if(c&&$("fcf-mk").value===""&&document.activeElement!==$("fcf-mk"))$("fcf-mk").value=c.mk??"";
   $("fin-cf-hist").innerHTML=cf.length?`<table><thead><tr><th>Stand per</th><th class="r">Bank</th><th class="r">Debiteuren</th><th class="r">Crediteuren</th><th class="r">Maandkosten</th><th class="r">Beschikbaar</th><th>Door</th><th></th></tr></thead><tbody>${cf.map(x=>{const v=finCF(x);return `<tr><td class="num">${dLabel(x.datum)}</td><td class="r num">${eur(x.bank)}</td><td class="r num">${eur(x.deb)}</td><td class="r num">${eur(x.cred)}</td><td class="r num">${eur(x.mk)}</td><td class="r num" style="color:var(--${v>=0?"good":"bad"})"><b>${eur(v)}</b></td><td>${esc(x.door||"")}</td><td class="r"><button class="btn ghost" data-fin-del="${esc(x.id)}" style="padding:4px 10px;font-size:12px">Verwijderen</button></td></tr>`}).join("")}</tbody></table>`:"";
-  // YTD
-  document.querySelectorAll("#fin-scen button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===FIN.scen)));
-  const m=S.month,y=m.slice(0,4),bs="begroting-"+FIN.scen;const alle=[...Array(12)].map((_,i)=>y+"-"+pad(i+1));
-  const tm=alle.filter(x=>x<=m);let laatst=[...tm].reverse().find(x=>finHas("werkelijk",x));const ytd=laatst?tm.filter(x=>x<=laatst):tm;
-  const mist=ytd.filter(x=>!finHas("werkelijk",x));
-  const W={m:finSom("werkelijk",[m]),y:finSom("werkelijk",ytd)},B={m:finSom(bs,[m]),y:finSom(bs,ytd),j:finSom(bs,alle)};
-  const ytdLabel=ytd.length>1?MONTHS[0]+" t/m "+MONTHS[+ytd[ytd.length-1].slice(5)-1]:MONTHS[+ytd[0].slice(5)-1];
-  $("fin-ytd-t").textContent="Cijfers "+y+": begroting tegenover Exact";
-  $("fin-ytd-sub").innerHTML=`Maand: ${esc(monthLabel(m))}${finHas("werkelijk",m)?"":" (nog geen gerealiseerde cijfers)"}. YTD: ${esc(ytdLabel)}${laatst?", t/m de laatste maand met gerealiseerde cijfers":""}. Afwijking = gerealiseerd − begroting.${mist.length&&laatst?` <b style="color:var(--bad)">Gerealiseerd ontbreekt voor ${mist.map(x=>MONTHS[+x.slice(5)-1]).join(", ")}.</b>`:""}${FIN.docs.some(d=>d.soort===bs)?"":` <b>Nog geen begroting ${FIN.scen} ingevuld.</b>`}`;
-  const ROWS=[["omzet","Netto-omzet",1],["kostprijs","Kostprijs van de omzet",-1],["bruto","Brutowinst",1,1,1],...FIN_KOSTEN.map(k=>[k,FIN_REGELS.find(r=>r[0]===k)[1],-1]),["kosten","Som der bedrijfskosten",-1,1],["bedr","Bedrijfsresultaat",1,1,1],["rente","Rentelasten en soortgelijke kosten",-1],["res","Resultaat uit gewone bedrijfsuitoefening",1,1,1],["ebitda","EBITDA",1,1,1]];
-  const n=v=>`<td class="r num">${v?eur(v):'<span class="muted">–</span>'}</td>`;
-  const pc=(v,o)=>o?`<div class="muted" style="font-size:11px">${(Math.round(v/o*1000)/10).toLocaleString("nl-NL")}%</div>`:"";
-  const heeftM=finHas("werkelijk",m),heeftY=ytd.some(x=>finHas("werkelijk",x));
-  const af=(w,b,sg,ok0)=>{const d=w-b;if(!ok0||(!w&&!b))return `<td class="r"><span class="muted">–</span></td>`;const ok=d*sg>=0;return `<td class="r num" style="color:var(--${Math.abs(d)<1?"muted":ok?"good":"bad"})">${d>0?"+":""}${eur(d)}</td>`};
-  $("fin-ytd").innerHTML=`<table><thead><tr><th></th><th class="r" colspan="3" style="border-bottom:1px solid var(--line)">${esc(monthLabel(m))}</th><th class="r" colspan="3" style="border-bottom:1px solid var(--line)">YTD ${esc(ytdLabel)}</th><th class="r">Heel jaar</th></tr>
-    <tr><th>Regel</th><th class="r">Gerealiseerd</th><th class="r">Begroting</th><th class="r">Afwijking</th><th class="r">Gerealiseerd</th><th class="r">Begroting</th><th class="r">Afwijking</th><th class="r">Begroting</th></tr></thead><tbody>${ROWS.map(([k,l,sg,bold,pct])=>{const st=bold?' style="background:var(--soft)"':"";const b=x=>bold?`<b>${x}</b>`:x;
-      return `<tr${st}><td>${b(esc(l))}</td><td class="r num">${b(W.m[k]?eur(W.m[k]):'<span class="muted">–</span>')}${pct?pc(W.m[k],W.m.omzet):""}</td>${n(B.m[k])}${af(W.m[k],B.m[k],sg,heeftM)}<td class="r num">${b(W.y[k]?eur(W.y[k]):'<span class="muted">–</span>')}${pct?pc(W.y[k],W.y.omzet):""}</td><td class="r num">${B.y[k]?eur(B.y[k]):'<span class="muted">–</span>'}${pct?pc(B.y[k],B.y.omzet):""}</td>${af(W.y[k],B.y[k],sg,heeftY)}${n(B.j[k])}</tr>`}).join("")}</tbody></table>
-    <p class="muted" style="font-size:12px;margin:8px 0 0">Groen = beter dan begroot (meer opbrengst of minder kosten), rood = slechter. EBITDA = resultaat + rente + afschrijvingen.</p>`;
+  // Cijfers: per maand of YTD, per begroting uitklapbaar, met trendgrafieken
+  const y=S.month.slice(0,4),alle=[...Array(12)].map((_,i)=>y+"-"+pad(i+1)),gm=alle.filter(x=>finHas("werkelijk",x));
+  const mn=x=>MONTHS[+x.slice(5)-1],Mn=x=>mn(x).charAt(0).toUpperCase()+mn(x).slice(1);
+  if(!FIN.per||(FIN.per!=="ytd"&&!gm.includes(FIN.per)))FIN.per=gm.length?gm[gm.length-1]:"ytd";
+  const per=FIN.per==="ytd"?gm:[FIN.per],ytdL=gm.length?(gm.length>1?"jan–"+mn(gm[gm.length-1]).slice(0,3):mn(gm[0]).slice(0,3)):"";
+  $("fin-per").innerHTML=gm.length?[`<button type="button" data-p="ytd" aria-pressed="${FIN.per==="ytd"}">YTD (${ytdL})</button>`,...gm.map(x=>`<button type="button" data-p="${x}" aria-pressed="${FIN.per===x}">${Mn(x)}</button>`)].join(""):"";
+  const perL=FIN.per==="ytd"?(gm.length>1?"januari t/m "+mn(gm[gm.length-1]):gm.length?mn(gm[0]):"")+" "+y:mn(FIN.per)+" "+y;
+  $("fin-ytd-t").textContent="Cijfers "+y;
+  $("fin-ytd-sub").innerHTML=gm.length?`Gerealiseerd tegenover prognose (begroting): ${esc(perL)}.`:`Nog geen gerealiseerde cijfers voor ${y}. Vul ze onderaan in.`;
+  const W=finSom("werkelijk",per);
+  const ROWS=[["omzet","Netto-omzet",1],["kostprijs","Kostprijs van de omzet",-1],["bruto","Brutomarge",1,"sub",1],...FIN_KOSTEN.map(k=>[k,FIN_REGELS.find(r=>r[0]===k)[1],-1]),["kosten","Som der bedrijfskosten",-1,"sub"],["bedr","Bedrijfsresultaat",1,"sub",1],["rente","Rentelasten en soortgelijke kosten",-1,"it"],["res","Resultaat uit gewone bedrijfsuitoefening",1,0,1],["ebitda","EBITDA",1,0,1]];
+  const pv=(v,o)=>o?v/o*100:null,pS=p=>p==null?"–":(Math.round(p*10)/10).toLocaleString("nl-NL")+"%";
+  const tbl=(B)=>`<div class="tbl"><table class="fin-tb"><thead><tr><th>Resultatenrekening</th><th class="r">Gerealiseerd</th><th class="r">%</th><th class="r">Prognose</th><th class="r">%</th><th class="r">Afwijking</th></tr></thead><tbody>${ROWS.map(([k,l,sg,cls,key])=>{
+      const w=W[k],b=B[k],d=w-b,pw=k==="omzet"||k==="kostprijs"?null:pv(w,W.omzet),pb=k==="omzet"||k==="kostprijs"?null:pv(b,B.omzet);
+      const pcls=pw==null?"":key&&pb!=null?((pw-pb)*sg>=0?"good":"bad"):"none";const bo=x=>cls==="sub"?`<b>${x}</b>`:x;
+      const dc=Math.abs(d)<1?"muted":d*sg>=0?"good":"bad";
+      return `<tr class="${cls||""}"><td>${bo(esc(l))}</td><td class="r num">${bo(eur(w))}</td><td class="pc">${pw==null?'<span class="muted">–</span>':`<span class="pill ${pcls}">${pS(pw)}</span>`}</td><td class="r num">${eur(b)}</td><td class="pc">${pb==null?'<span class="muted">–</span>':`<span class="pill none">${pS(pb)}</span>`}</td><td class="r num" style="color:var(--${dc})">${bo(eur(d))}</td></tr>`}).join("")}</tbody></table></div>`;
+  const chart=(t,ka,act,bud)=>{const Wd=300,H=130,pl=6,pr=48,pt=14,pb=18;const vals=[...act,...bud].filter(v=>v!=null);const mx=Math.max(0,...vals),mi=Math.min(0,...vals),rg=(mx-mi)||1;const n=bud.length;
+      const X=i=>pl+(Wd-pl-pr)*(n>1?i/(n-1):.5),Y=v=>pt+(H-pt-pb)*(1-(v-mi)/rg);
+      const ln=(a,st)=>{const pts=a.map((v,i)=>v==null?null:[X(i),Y(v)]).filter(Boolean);return pts.length?`<polyline points="${pts.map(p=>p.map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="none" ${st}/>${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" ${st.replace("stroke-dasharray=\"4 3\"","")} fill="var(--card)"/>`).join("")}`:""};
+      const la=act[act.length-1],lb=bud[bud.length-1];
+      return `<div><h4>${t}</h4><svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${t}: gerealiseerd tegenover prognose">${mi<0?`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`:""}<text x="${pl}" y="9">${eurK(mx)}</text>
+        ${ln(bud,'stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"')}${ln(act,'stroke="var(--fg)" stroke-width="2"')}
+        ${lb!=null?`<text x="${Wd-pr+4}" y="${Y(lb)+(lb>=la?-2:9)}" style="fill:var(--muted)">${eurK(lb)}</text>`:""}${la!=null?`<text x="${Wd-pr+4}" y="${Y(la)+(la>lb?-2:9)}" style="fill:var(--fg);font-weight:700">${eurK(la)}</text>`:""}
+        ${bud.map((_,i)=>`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mn(gm[i]).slice(0,3)}</text>`).join("")}</svg></div>`};
+  const sc=s2=>{const bs="begroting-"+s2,B=finSom(bs,per);const heeft=FIN.docs.some(d=>d.soort===bs);
+    const A=gm.map(x=>finSom("werkelijk",[x])),P=gm.map(x=>finSom(bs,[x]));
+    return `<details class="card fin-sc" open><summary>Begroting ${s2} resultaat</summary>${heeft?tbl(B):`<div class="empty">Nog geen begroting ${s2} ingevuld.</div>`}
+      ${gm.length&&heeft?`<div class="row" style="gap:14px;margin-top:12px;font-size:12px"><span><b style="display:inline-block;width:16px;border-top:2px solid var(--fg);vertical-align:middle"></b> Gerealiseerd</span><span><b style="display:inline-block;width:16px;border-top:2px dashed var(--muted);vertical-align:middle"></b> Prognose</span></div>
+      <div class="fin-ch">${chart("Netto-omzet","omzet",A.map(a=>a.omzet),P.map(p=>p.omzet))}${chart("Brutomarge","bruto",A.map(a=>a.bruto),P.map(p=>p.bruto))}${chart("Resultaat uit gewone bedrijfsuitoefening","res",A.map(a=>a.res),P.map(p=>p.res))}</div>`:""}</details>`};
+  $("fin-ytd").innerHTML=sc("50k")+sc("100k")+`<p class="muted" style="font-size:12px;margin:4px 0 18px;line-height:1.8"><span class="pill good" style="font-size:11px">groen</span> beter dan begroot · <span class="pill bad" style="font-size:11px">rood</span> slechter · <span class="pill none" style="font-size:11px">grijs</span> gelijk of n.v.t. Kleur alleen bij marge en resultaat; kosten tonen het aandeel van de omzet. Gerealiseerd is in beide tabellen gelijk, alleen de prognose verschilt. Afwijking = gerealiseerd − prognose. EBITDA = resultaat + rente + afschrijvingen.</p>`;
+  const ds=FIN.per!=="ytd"&&FIN.docs.find(x=>x.id==="werkelijk-"+FIN.per);const tl=ds&&String(ds.toelichting||"").split("\n").map(x=>x.replace(/^[-•*]\s*/,"").trim()).filter(Boolean);
+  $("fin-toel").hidden=!(tl&&tl.length);if(tl&&tl.length)$("fin-toel").innerHTML=`<h3>Toelichting kostenontwikkeling · ${esc(mn(FIN.per)+" "+y)}</h3><ul style="margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7">${tl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
 }
 
 /* ---------- Boot ---------- */
