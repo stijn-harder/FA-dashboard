@@ -389,6 +389,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .trechter .cv .pill{border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px}
 .fin-sc>summary{cursor:pointer;font-weight:700;font-size:15px;padding:2px 0 10px;list-style:none;display:flex;align-items:center;gap:8px}.fin-sc>summary::-webkit-details-marker{display:none}.fin-sc>summary::before{content:'▸';transition:transform .2s;display:inline-block}.fin-sc[open]>summary::before{transform:rotate(90deg)}
 .fin-tb thead th{background:var(--navy,#0D1B26);color:#fff}.fin-tb td.pc{text-align:right}.fin-tb .pill{border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}.fin-tb tr.sub td{background:var(--soft)}.fin-tb tr.it td{font-style:italic;color:var(--muted)}
+.kpi4{grid-template-columns:repeat(4,minmax(0,1fr))!important}@media(max-width:1100px){.kpi4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:600px){.kpi4{grid-template-columns:minmax(0,1fr)!important}}
 .fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
 .pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
 .alertc{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--bad);background:var(--badbg);border-radius:14px;padding:14px 16px}
@@ -446,6 +447,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <div class="grp">Marketing</div>
     <button data-t="leads"><svg><use href="#i-leads"/></svg>Leads &amp; bronnen<span class="cnt" id="c-leads">0</span></button>
     <button data-t="kosten"><svg><use href="#i-euro"/></svg>Kosten &amp; rendement</button>
+    <button data-t="socials"><svg><use href="#i-odoo"/></svg>Socials</button>
     <div class="grp">Sales</div>
     <button data-t="intakes"><svg><use href="#i-intake"/></svg>Intakes<span class="cnt" id="c-intakes">0</span></button>
     <button data-t="marge"><svg><use href="#i-euro"/></svg>Bruto marge</button>
@@ -491,11 +493,13 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
         <div class="card"><div class="row between"><h3>Komende intakes</h3><svg width="18" height="18" style="color:var(--blue)"><use href="#i-cal"/></svg></div><div class="feed" id="upcoming"></div></div>
         <div class="card"><div class="row between"><h3>Laatst toegevoegd</h3><svg width="18" height="18" style="color:var(--blue)"><use href="#i-bolt"/></svg></div><div class="feed" id="feed"></div></div>
       </div>
+      <div class="card"><div class="row between" style="flex-wrap:wrap;gap:8px"><div><div class="eyebrow">Trends</div><h2 style="margin:2px 0 0">Per maand</h2></div><div class="row" style="gap:14px;font-size:12px"><span><b style="display:inline-block;width:16px;border-top:2px solid var(--fg);vertical-align:middle"></b> Gerealiseerd</span><span><b style="display:inline-block;width:16px;border-top:2px dashed var(--muted);vertical-align:middle"></b> Target</span></div></div>
+        <div class="fin-ch kpi4" id="ov-trends"></div><p class="muted" style="font-size:12px;margin:10px 0 0" id="ov-trends-note"></p></div>
     </section>
 
     <section data-p="leads" hidden>
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Leads &amp; bronnen</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
-      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button></div>
+      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
       <div id="bron-alert"></div>
       <div class="grid4" id="lead-kpis"></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Funnel per bron</h3><div class="muted" style="font-size:12px">Van lead naar intake, voortraject en realisatie. Rood = loopt het verst achter op de rest.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="bron-funnel" class="tbl" style="margin-top:8px"></div></div>
@@ -504,9 +508,18 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="card tbl" id="lead-table"></div>
     </section>
 
+    <section data-p="socials" hidden>
+      <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Socials</h1></div></div>
+      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
+      <div class="card"><h3>Views per maand</h3><div class="muted" style="font-size:12px">Alle kanalen samen. Doorgetrokken = gerealiseerd, stippellijn = target.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:minmax(0,640px)"></div></div>
+      <div class="card"><h3>Views invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand, alle kanalen samen. Voorlopig handmatig.</p>
+        <form class="f" id="soc-form" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))"><label>Maand<input id="soc-maand" type="month" required></label><label>Views<input id="soc-views" type="number" min="0" step="any"></label><label>Target views<input id="soc-target" type="number" min="0" step="any"></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
+        <div class="tbl" id="soc-list" style="margin-top:12px"></div></div>
+    </section>
+
     <section data-p="kosten" hidden>
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Kosten &amp; rendement</h1></div></div>
-      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button></div>
+      <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
       <div class="grid4" id="ks-kpis"></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Wat kost het en wat levert het op</h3><div class="muted" style="font-size:12px">Per bron: kosten tegenover leads, intakes, voortrajecten, realisaties en bruto marge.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="ks-table" class="tbl" style="margin-top:8px"></div></div>
       <div class="grid2">
@@ -660,8 +673,8 @@ const TARGET_FIELDS=[
  ["kevin_intakes","Kevin","Intakes"],["kevin_bruto","Kevin","Bruto marge (€)"],["kevin_bruto_min","Kevin","Ondergrens bruto marge (€)"],
  ["lars_intakes","Lars","Gekwalificeerde intakes"],["lars_intakes_min","Lars","Ondergrens intakes"]];
 const MONTHS=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-const TABS=["overzicht","leads","kosten","intakes","marge","odoo","targets","financieel"];
-const GROEP={leads:"marketing",kosten:"marketing",intakes:"sales",marge:"sales",odoo:"sales"};
+const TABS=["overzicht","leads","kosten","intakes","marge","odoo","targets","financieel","socials"];
+const GROEP={leads:"marketing",kosten:"marketing",socials:"marketing",intakes:"sales",marge:"sales",odoo:"sales"};
 const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,bronRange:"m",kosten:[],trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1159,7 +1172,7 @@ function renderHello(){renderMe();
   $("hello-sub").textContent=new Date().toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   const s=stats(curMonth());$("c-leads").textContent=s.leads;$("c-intakes").textContent=s.intakes;
 }
-let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOrdTarget();renderOdoo();renderFin();revealAll()})}
+let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOrdTarget();renderTrends();renderSocials();renderOdoo();renderFin();revealAll()})}
 function showTab(t,push){if(!TABS.includes(t))t="overzicht";S.tab=t;document.querySelectorAll("section[data-p]").forEach(s=>s.hidden=s.dataset.p!==t);
   document.querySelectorAll("#menu button,.subnav button").forEach(b=>{if(b.dataset.t===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   document.querySelectorAll("#bottom button").forEach(b=>{if(b.dataset.t===t||(b.dataset.g&&b.dataset.g===GROEP[t]))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
@@ -1259,7 +1272,7 @@ let palSel=0,palItems=[];
 function palData(q){
   q=q.trim().toLowerCase();
   const acts=[["Nieuwe intake","#i-plus",()=>openDrawer("intake"),"actie"],["Bruto marge toevoegen","#i-plus",()=>openDrawer("marge"),"actie"],["Overige aanvraag toevoegen","#i-plus",()=>openDrawer("lead"),"actie"],["Mijn profiel en foto","#i-home",()=>openProfile(),"actie"],
-    ...TABS.map(t=>[{overzicht:"Overzicht",leads:"Leads & bronnen",kosten:"Kosten & rendement",intakes:"Intakes",marge:"Bruto marge",odoo:"Offertes & pijplijn",targets:"Targets",financieel:"Financieel"}[t],"#i-home",()=>showTab(t,true),"ga naar"])];
+    ...TABS.map(t=>[{overzicht:"Overzicht",leads:"Leads & bronnen",kosten:"Kosten & rendement",intakes:"Intakes",marge:"Bruto marge",odoo:"Offertes & pijplijn",targets:"Targets",financieel:"Financieel",socials:"Socials"}[t],"#i-home",()=>showTab(t,true),"ga naar"])];
   const recs=[...S.intakes.map(i=>[i.klant,"#i-intake",()=>{showTab("intakes",true);editIntake(i.id)},"intake · "+(i.door||"")]),...S.marge.map(x=>[x.deal,"#i-euro",()=>{showTab("marge",true);editMarge(x.id)},eurK(x.bedrag)])];
   const all=q?[...acts,...recs].filter(a=>String(a[0]).toLowerCase().includes(q)||String(a[3]).toLowerCase().includes(q)):acts;
   return all.slice(0,12);
@@ -1525,6 +1538,44 @@ document.addEventListener("click",async e=>{if(!e.target.closest("#fin-toel-save
   const {id:_,...d}=old;d.toelichting=$("fin-toel-txt").value.trim();d.toelichtingDoor=(S.meName||"").split(" ")[0];d.updatedAt=new Date().toISOString();
   if(await save("financieel",id,d)){FIN.toelM=null;toast("Toelichting "+MONTHS[+m.slice(5)-1]+" opgeslagen");renderFin()}});
 
+
+/* ---------- Trends per maand (Overzicht) en Socials ----------
+   Historie in 'kpi_maand' (id YYYY-MM, alleen admins): {leads, leadsT, intakes, intakesT, voortrajecten, voortrajectenT, marge, margeT}.
+   Een waarde in kpi_maand wint; anders rekent de cockpit vanaf KPI_LIVE_VANAF zelf (zoals het Overzicht). Targets: maandtargets, anders kpi_maand.
+   Views in 'socials' (id YYYY-MM, elk teamlid): {views, viewsTarget}. */
+const KPI_LIVE_VANAF="2026-10";
+const mAdd=(m,k)=>{const d=new Date(m+"-15");d.setMonth(d.getMonth()+k);return iso(d).slice(0,7)};
+const mKort=m=>{const n=MONTHS[+m.slice(5)-1].slice(0,3);return m.slice(5)==="01"?n+" '"+m.slice(2,4):n};
+function trendMaanden(extra){const nu=curMonth();const ks=[...Object.keys(S.kpi||{}),...(extra||[])].filter(k=>/^\d{4}-\d{2}$/.test(k)&&k<=nu).sort();
+  let van=ks[0]||KPI_LIVE_VANAF;if(van>KPI_LIVE_VANAF)van=KPI_LIVE_VANAF;const min=mAdd(nu,-12);if(van<min)van=min;const out=[];for(let m=van;m<=nu;m=mAdd(m,1))out.push(m);return out}
+function trendLijn(t,mnd,act,tgt,fmt){const Wd=300,H=140,pl=14,pr=52,pt=18,pb=18;const vals=[...act,...tgt].filter(v=>v!=null);const mx=Math.max(1,...vals),mi=Math.min(0,...vals),rg=(mx-mi)||1;const n=mnd.length;
+  const X=i=>pl+(Wd-pl-pr)*(n>1?i/(n-1):.5),Y=v=>pt+(H-pt-pb)*(1-(v-mi)/rg);
+  const ln=(a,st,dash)=>{const pts=a.map((v,i)=>v==null?null:[X(i),Y(v)]);let d="",pen=false;pts.forEach(p=>{if(!p){pen=false;return}d+=(pen?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1);pen=true});
+    return `<path d="${d}" fill="none" ${st}${dash?' stroke-dasharray="4 3"':""}/>`+pts.filter(Boolean).map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.3" ${st} fill="var(--card)"/>`).join("")};
+  const last=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return [i,a[i]];return null};const la=last(act),lt=last(tgt);
+  const lab=(p,cls,up)=>p?`<text x="${Wd-pr+4}" y="${Y(p[1])+(up?-3:10)}" style="${cls}">${fmt(p[1])}</text>`:"";const up=la&&lt?la[1]>=lt[1]:true;
+  const step=n>8?2:1;
+  return `<div><h4>${t}</h4><svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${t} per maand: gerealiseerd tegenover target"><text x="2" y="10">${fmt(mx)}</text><line x1="${pl}" x2="${Wd-pr}" y1="${Y(mi)}" y2="${Y(mi)}" stroke="var(--line)"/>
+    ${ln(tgt,'stroke="var(--muted)" stroke-width="1.5"',1)}${ln(act,'stroke="var(--fg)" stroke-width="2"')}${lab(lt,"fill:var(--muted)",!up)}${lab(la,"fill:var(--fg);font-weight:700",up)}
+    ${mnd.map((m,i)=>i%step&&i!==n-1?"":`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mKort(m)}</text>`).join("")}</svg></div>`}
+const fmtAantal=v=>Math.round(v).toLocaleString("nl-NL");
+function renderTrends(){if(!$("ov-trends"))return;const mnd=trendMaanden();const K=S.kpi||{};
+  const val=(m,f,calc)=>{const d=K[m];if(d&&d[f]!=null&&d[f]!=="")return +d[f];return m>=KPI_LIVE_VANAF?calc(stats(m)):null};
+  const tg=(m,f,tf)=>{const T=S.targets[m]||{};if(T[tf])return +T[tf];const d=K[m];return d&&d[f+"T"]!=null&&d[f+"T"]!==""?+d[f+"T"]:null};
+  const R=[["Leads (incl. offerteaanvragen)","leads","fa_leads",s=>s.leads,fmtAantal],["Intakes","intakes","fa_intakes",s=>s.intakes,fmtAantal],["Voortrajecten","voortrajecten","fa_voortrajecten",s=>s.voortrajecten,fmtAantal],["Bruto marge verkocht","marge","fa_bruto",s=>s.bruto,eurK]];
+  $("ov-trends").innerHTML=R.map(([t,f,tf,c,fmt])=>trendLijn(t,mnd,mnd.map(m=>val(m,f,c)),mnd.map(m=>tg(m,f,tf)),fmt)).join("");
+  $("ov-trends-note").textContent=`Vanaf ${monthLabel(KPI_LIVE_VANAF)} rekent de cockpit zelf mee, ook de lopende maand (${monthLabel(curMonth())} loopt nog). Eerdere maanden komen uit de maandpresentaties.`}
+function renderSocials(){if(!$("soc-chart"))return;const SO=S.socials||{};const mnd=trendMaanden(Object.keys(SO));
+  const v=m=>SO[m]&&SO[m].views!=null&&SO[m].views!==""?+SO[m].views:null,t=m=>SO[m]&&SO[m].viewsTarget!=null&&SO[m].viewsTarget!==""?+SO[m].viewsTarget:null;
+  $("soc-chart").innerHTML=Object.keys(SO).length?trendLijn("Views",mnd,mnd.map(v),mnd.map(t),x=>x>=1e6?(Math.round(x/1e5)/10).toLocaleString("nl-NL")+"M":x>=1000?Math.round(x/1000).toLocaleString("nl-NL")+"k":fmtAantal(x)):`<div class="empty">Nog geen views ingevuld.</div>`;
+  if(!$("soc-maand").value)$("soc-maand").value=curMonth();
+  const rows=Object.entries(SO).sort((a,b)=>b[0].localeCompare(a[0]));
+  $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th><th class="r">Views</th><th class="r">Target</th><th>Door</th></tr></thead><tbody>${rows.map(([m,d])=>`<tr><td>${esc(monthLabel(m))}</td><td class="r num">${d.views!=null?fmtAantal(d.views):"–"}</td><td class="r num">${d.viewsTarget!=null?fmtAantal(d.viewsTarget):"–"}</td><td>${esc(d.door||"")}</td></tr>`).join("")}</tbody></table>`:""}
+document.addEventListener("change",e=>{if(e.target.id!=="soc-maand")return;const d=(S.socials||{})[e.target.value]||{};$("soc-views").value=d.views??"";$("soc-target").value=d.viewsTarget??""});
+document.addEventListener("submit",async e=>{if(e.target.id!=="soc-form")return;e.preventDefault();const m=$("soc-maand").value;if(!m)return;
+  const num=id=>$(id).value===""?null:+$(id).value;const d={maand:m,views:num("soc-views"),viewsTarget:num("soc-target"),door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
+  if(await save("socials",m,d))toast("Views "+monthLabel(m)+" opgeslagen")});
+
 /* ---------- Boot ---------- */
 async function boot(){
   S.month=curMonth();resetIntForm();resetMgForm();$("lf-datum").value=today();
@@ -1542,6 +1593,8 @@ async function boot(){
   db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("orderportefeuille").onSnapshot(snap=>{S.orders=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
+  db.collection("kpi_maand").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.kpi=o;render()},()=>{});
+  db.collection("socials").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.socials=o;render()},()=>{});
   db.collection("profielen").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.profielen=o;render()},()=>{});
   db.collection("data/targets/maanden").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.targets=o;render();if(!sub._t){sub._t=1;done()}},lost);
   db.collection("odoo").orderBy("datum","desc").limit(1).onSnapshot(snap=>{S.odoo=snap.docs[0]?snap.docs[0].data():null;render()},()=>{});
