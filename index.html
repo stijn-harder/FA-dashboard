@@ -514,7 +514,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Socials</h1></div></div>
       <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
       <div class="grid4" id="soc-kpis" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div>
-      <div class="card"><h3>Per maand</h3><div class="muted" style="font-size:12px">Alle kanalen samen. Doorgetrokken = gerealiseerd, stippellijn = target.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div></div>
+      <div class="card"><h3>Per maand</h3><div class="muted" style="font-size:12px">Maanden zonder cijfers zijn een gat in de lijn. Beweeg met je muis over een maand voor de getallen.</div><div class="fin-ch" id="soc-chart" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr))"></div></div>
       <div class="card tbl" id="soc-list"></div>
       <div id="soc-top"></div>
       <div class="card"><h3>Invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: views en nieuwe volgers per kanaal (afgelopen 30 dagen). Views totaal = som van de kanalen.</p>
@@ -1603,21 +1603,38 @@ function renderTrends(){if(!$("ov-trends"))return;const mnd=trendMaanden();const
 const KANALEN=[["instagram","Instagram"],["tiktok","TikTok"],["youtube","YouTube"],["facebook","Facebook"]];
 const socNum=v=>v==null||v===""?null:+v;
 // Totaal views: som van de kanalen als die er zijn, anders het losse totaal (historie).
-const socViews=d=>{if(!d)return null;const k=d.kanalen||{};const vs=KANALEN.map(([c])=>socNum((k[c]||{}).views)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0):socNum(d.views)};
+const socViews=d=>{if(!d)return null;if(d.viewsTotaal!=null&&d.viewsTotaal!=="")return +d.viewsTotaal;const k=d.kanalen||{};const vs=KANALEN.map(([c])=>socNum((k[c]||{}).views)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0):socNum(d.views)};
 const socVolgers=d=>{if(!d)return null;const k=d.kanalen||{};const vs=KANALEN.map(([c])=>socNum((k[c]||{}).volgers)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0):null};
+const KAN_KLEUR={totaal:"var(--fg)",instagram:"#279FDA",tiktok:"#E0457B",youtube:"#E0A100",facebook:"#3CB371",target:"var(--muted)"};
+// Lijngrafiek met meerdere lijnen; null = geen datapunt (gat in de lijn, geen 0).
+function trendMulti(t,mnd,series,fmt){const Wd=520,H=200,pl=14,pr=14,pt=18,pb=20;const vals=series.flatMap(x=>x.vals).filter(v=>v!=null);const mx=Math.max(1,...vals),mi=Math.min(0,...vals),rg=(mx-mi)||1;const n=mnd.length;
+  const X=i=>pl+(Wd-pl-pr)*(n>1?i/(n-1):.5),Y=v=>pt+(H-pt-pb)*(1-(v-mi)/rg);
+  const ln=x=>{let d="",pen=false;x.vals.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1);pen=true});
+    return `<path d="${d}" fill="none" stroke="${x.kleur}" stroke-width="${x.dik||1.8}"${x.dash?' stroke-dasharray="4 3"':""}/>`+x.vals.map((v,i)=>v==null?"":`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.3" stroke="${x.kleur}" stroke-width="1.5" fill="var(--card)"/>`).join("")};
+  const grid=[0,.5,1].map(f=>{const v=mi+rg*f;return `<line x1="${pl}" x2="${Wd-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${f?0.6:1}"/><text x="${pl}" y="${Y(v)-3}">${fmt(v)}</text>`}).join("");
+  const leg=`<div class="row" style="gap:12px;flex-wrap:wrap;font-size:12px;margin:2px 0 6px">${series.map(x=>`<span><b style="display:inline-block;width:14px;border-top:${x.dik>2?3:2}px ${x.dash?"dashed":"solid"} ${x.kleur};vertical-align:middle"></b> ${esc(x.label)}</span>`).join("")}</div>`;
+  const step=n>8?2:1;
+  return `<div><h4>${t}</h4>${leg}<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${t} per maand">${grid}${series.map(ln).join("")}
+    ${mnd.map((m,i)=>i%step&&i!==n-1?"":`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mKort(m)}</text>`).join("")}
+    ${tipBanden(n,X,pt-6,H-pb,mnd.map((m,i)=>[monthLabel(m),...series.map(x=>x.label+": "+(x.vals[i]==null?"–":fmtAantal(x.vals[i])))].join("\n")))}</svg></div>`}
 const fmtKort=x=>x>=1e6?(Math.round(x/1e5)/10).toLocaleString("nl-NL")+"M":x>=1000?Math.round(x/1000).toLocaleString("nl-NL")+"k":fmtAantal(x);
 function socFields(){const d=(S.socials||{})[$("soc-maand").value]||{},k=d.kanalen||{};
-  $("soc-fields").innerHTML=KANALEN.map(([c,l])=>`<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px"><b style="font-size:13px">${l}</b><label>Views<input id="soc-${c}-v" type="number" min="0" step="any" value="${(k[c]||{}).views??""}"></label><label>Nieuwe volgers<input id="soc-${c}-f" type="number" step="any" value="${(k[c]||{}).volgers??""}"></label></div>`).join("");
+  $("soc-fields").innerHTML=KANALEN.map(([c,l])=>`<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px"><b style="font-size:13px">${l}</b><label>Views<input id="soc-${c}-v" type="number" min="0" step="any" value="${(k[c]||{}).views??""}"></label><label>Nieuwe volgers<input id="soc-${c}-f" type="number" step="any" value="${(k[c]||{}).volgers??""}"></label><label>Totaal volgers<input id="soc-${c}-t" type="number" min="0" step="any" value="${(k[c]||{}).totaal??""}"></label></div>`).join("");
   $("soc-target").value=d.viewsTarget??""}
 function renderSocials(){if(!$("soc-chart"))return;const SO=S.socials||{};const mnd=trendMaanden(Object.keys(SO));
   const t=m=>SO[m]?socNum(SO[m].viewsTarget):null;
-  $("soc-chart").innerHTML=Object.keys(SO).length?trendLijn("Views",mnd,mnd.map(m=>socViews(SO[m])),mnd.map(t),fmtKort)+trendLijn("Nieuwe volgers",mnd,mnd.map(m=>socVolgers(SO[m])),mnd.map(()=>null),fmtAantal):`<div class="empty">Nog geen cijfers ingevuld.</div>`;
+  const kv=(m,c,f)=>{const x=((SO[m]||{}).kanalen||{})[c];return x?socNum(x[f]):null};
+  const per=f=>KANALEN.map(([c,l])=>({label:l,kleur:KAN_KLEUR[c],vals:mnd.map(m=>kv(m,c,f))}));
+  $("soc-chart").innerHTML=Object.keys(SO).length?
+    trendMulti("Views per platform",mnd,[{label:"Totaal",kleur:KAN_KLEUR.totaal,dik:2.6,vals:mnd.map(m=>socViews(SO[m]))},...per("views"),{label:"Target totaal",kleur:KAN_KLEUR.target,dash:1,dik:1.4,vals:mnd.map(t)}],fmtKort)+
+    trendMulti("Nieuwe volgers per platform",mnd,per("volgers"),fmtKort)+
+    trendMulti("Totaal aantal volgers per platform",mnd,per("totaal"),fmtKort):`<div class="empty">Nog geen cijfers ingevuld.</div>`;
   const rows=Object.entries(SO).sort((a,b)=>b[0].localeCompare(a[0]));const laatst=rows[0];
   $("soc-kpis").innerHTML=laatst?[["Views "+monthLabel(laatst[0]),socViews(laatst[1]),laatst[1].viewsTarget?"target "+fmtKort(laatst[1].viewsTarget):""],["Nieuwe volgers",socVolgers(laatst[1]),"alle kanalen"],...KANALEN.map(([c,l])=>{const x=((laatst[1].kanalen||{})[c])||{};return [l,socNum(x.views),x.volgers!=null?"+"+fmtAantal(x.volgers)+" volgers":""]})]
     .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${esc(k)}</div><div class="stat num">${v==null?"–":fmtKort(v)}</div><div class="muted" style="font-size:12px">${esc(sub)}</div></div>`).join(""):"";
   const c=(v)=>`<td class="r num">${v==null?'<span class="muted">–</span>':fmtAantal(v)}</td>`;
-  $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th>${KANALEN.map(([,l])=>`<th class="r">${l}</th>`).join("")}<th class="r">Views totaal</th><th class="r">Target</th><th class="r">Nieuwe volgers</th><th>Door</th></tr></thead><tbody>${rows.map(([m,d])=>{const k=d.kanalen||{};
-    return `<tr><td>${esc(monthLabel(m))}</td>${KANALEN.map(([q])=>{const x=k[q]||{};return `<td class="r num">${x.views==null?'<span class="muted">–</span>':fmtAantal(x.views)}${x.volgers!=null?`<div class="muted" style="font-size:11px">+${fmtAantal(x.volgers)} volgers</div>`:""}</td>`}).join("")}<td class="r num"><b>${socViews(d)==null?"–":fmtAantal(socViews(d))}</b></td>${c(socNum(d.viewsTarget))}${c(socVolgers(d))}<td>${esc(d.door||"")}</td></tr>`}).join("")}</tbody></table>`:"";
+  $("soc-list").innerHTML=rows.length?`<table><thead><tr><th>Maand</th>${KANALEN.map(([,l])=>`<th class="r">${l}</th>`).join("")}<th class="r">Views totaal</th><th class="r">Target</th><th class="r">Nieuwe volgers</th></tr></thead><tbody>${rows.map(([m,d])=>{const k=d.kanalen||{};
+    return `<tr><td>${esc(monthLabel(m))}</td>${KANALEN.map(([q])=>{const x=k[q]||{};return `<td class="r num">${x.views==null?'<span class="muted">–</span>':fmtAantal(x.views)}${x.volgers!=null?`<div class="muted" style="font-size:11px">+${fmtAantal(x.volgers)} volgers</div>`:""}</td>`}).join("")}<td class="r num"><b>${socViews(d)==null?"–":fmtAantal(socViews(d))}</b></td>${c(socNum(d.viewsTarget))}${c(socVolgers(d))}</tr>`}).join("")}</tbody></table>`:"";
   // Top video's per kanaal: laatste maand met een lijst
   const metTop=rows.filter(([,d])=>d.top&&Object.keys(d.top).length);
   $("soc-top").innerHTML=metTop.length?(([m,d])=>KANALEN.filter(([c])=>(d.top[c]||[]).length).map(([c,l])=>{const L=d.top[c];
@@ -1628,8 +1645,8 @@ function renderSocials(){if(!$("soc-chart"))return;const SO=S.socials||{};const 
 document.addEventListener("change",e=>{if(e.target.id==="soc-maand")socFields()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="soc-form")return;e.preventDefault();const m=$("soc-maand").value;if(!m)return;
   const num=id=>$(id).value===""?null:+$(id).value;const old=(S.socials||{})[m]||{};const kanalen={};
-  KANALEN.forEach(([c])=>{const v=num("soc-"+c+"-v"),f=num("soc-"+c+"-f");if(v!=null||f!=null)kanalen[c]={views:v,volgers:f}});
-  const d={...old,maand:m,kanalen,viewsTarget:num("soc-target"),door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};d.views=socViews(d);
+  KANALEN.forEach(([c])=>{const v=num("soc-"+c+"-v"),f=num("soc-"+c+"-f"),tt=num("soc-"+c+"-t");if(v!=null||f!=null||tt!=null)kanalen[c]={views:v,volgers:f,totaal:tt}});
+  const d={...old,maand:m,kanalen,viewsTarget:num("soc-target"),updatedAt:new Date().toISOString()};delete d.door;delete d.viewsTotaal;d.views=socViews(d);
   if(await save("socials",m,d))toast("Socials "+monthLabel(m)+" opgeslagen")});
 
 /* ---------- Boot ---------- */
