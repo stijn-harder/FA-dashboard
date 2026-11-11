@@ -557,7 +557,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
         <div id="fin-ytd"></div>
         <div class="card" id="fin-toel" hidden></div>
         <div class="card"><h3>Cijfers invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: gerealiseerd (uit Exact) of de begroting. Kosten als positief bedrag. Later halen we gerealiseerd automatisch uit Exact.</p>
-          <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><label class="full" id="fin-inv-toel-l">Toelichting kostenontwikkeling (één punt per regel)<textarea id="fin-inv-toel" rows="4"></textarea></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
+          <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
       </div>
     </section>
 
@@ -1417,18 +1417,17 @@ document.addEventListener("submit",async e=>{
       if(error){msg.textContent=/rate|many/i.test(error.message)?"Te vaak geprobeerd. Wacht een paar minuten.":"Pincode klopt niet.";$("fin-pin").value="";return}}
     catch(x){msg.textContent="Controleren lukte niet. Probeer het zo nog eens.";return}
     FIN.open=true;clearTimeout(FIN.timer);FIN.timer=setTimeout(finLock,30*60*1000);
-    if(!FIN.sub&&S.db){FIN.sub=true;S.db.collection("financieel").onSnapshot(snap=>{FIN.docs=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>toast("Financiële cijfers laden lukte niet."))}
+    if(!FIN.sub&&S.db){FIN.sub=true;S.db.collection("financieel").onSnapshot(snap=>{FIN.docs=snap.docs.map(d=>({id:d.id,...d.data()}));if(document.activeElement!==$("fin-toel-txt"))FIN.toelM=null;render()},()=>toast("Financiële cijfers laden lukte niet."))}
     $("fcf-datum").value=today();$("fin-inv-maand").value=S.month;finFields();render();return}
   if(e.target.id==="fin-cf-form"){e.preventDefault();if(!FIN.open)return;
     const d={soort:"cashflow",datum:$("fcf-datum").value,bank:+$("fcf-bank").value||0,deb:+$("fcf-deb").value||0,cred:+$("fcf-cred").value||0,mk:+$("fcf-mk").value||0,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(!d.datum)return;if(await save("financieel","cashflow-"+d.datum,d))toast("Cashflow opgeslagen per "+dLabel(d.datum));return}
   if(e.target.id==="fin-inv-form"){e.preventDefault();if(!FIN.open)return;const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;if(!m)return;
-    const regels={};FIN_REGELS.forEach(([k])=>{const v=$("fin-r-"+k).value;if(v!=="")regels[k]=+v});
-    const d={soort,maand:m,regels,toelichting:soort==="werkelijk"?$("fin-inv-toel").value.trim():undefined,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
+    const d0=FIN.docs.find(x=>x.id===soort+"-"+m);const regels={};FIN_REGELS.forEach(([k])=>{const v=$("fin-r-"+k).value;if(v!=="")regels[k]=+v});
+    const d={soort,maand:m,regels,toelichting:d0&&d0.toelichting||undefined,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(await save("financieel",soort+"-"+m,d))toast($("fin-inv-soort").selectedOptions[0].textContent+" "+monthLabel(m)+" opgeslagen")}});
 function finFields(){const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;const d=FIN.docs.find(x=>x.id===soort+"-"+m);const r=(d&&d.regels)||{};
   $("fin-inv-fields").innerHTML=FIN_REGELS.map(([k,l])=>`<label>${l}<input id="fin-r-${k}" type="number" step="any" value="${r[k]??""}"></label>`).join("");
-  $("fin-inv-toel").value=(d&&d.toelichting)||"";$("fin-inv-toel-l").hidden=soort!=="werkelijk";
   $("fin-inv-note").textContent=d?`Al ingevuld${d.door?" door "+d.door:""}. Opslaan overschrijft.`:"Nog niet ingevuld."}
 document.addEventListener("change",e=>{if(e.target.id==="fin-inv-maand"||e.target.id==="fin-inv-soort")finFields()});
 document.addEventListener("click",async e=>{const b=e.target.closest("#fin-per button");if(b){FIN.per=b.dataset.p;renderFin();return}
@@ -1477,9 +1476,17 @@ function renderFin(){
       ${gm.length&&heeft?`<div class="row" style="gap:14px;margin-top:12px;font-size:12px"><span><b style="display:inline-block;width:16px;border-top:2px solid var(--fg);vertical-align:middle"></b> Gerealiseerd</span><span><b style="display:inline-block;width:16px;border-top:2px dashed var(--muted);vertical-align:middle"></b> Prognose</span></div>
       <div class="fin-ch">${chart("Netto-omzet","omzet",A.map(a=>a.omzet),P.map(p=>p.omzet))}${chart("Brutomarge","bruto",A.map(a=>a.bruto),P.map(p=>p.bruto))}${chart("Resultaat uit gewone bedrijfsuitoefening","res",A.map(a=>a.res),P.map(p=>p.res))}</div>`:""}</details>`};
   $("fin-ytd").innerHTML=sc("50k")+sc("100k")+`<p class="muted" style="font-size:12px;margin:4px 0 18px;line-height:1.8"><span class="pill good" style="font-size:11px">groen</span> beter dan begroot · <span class="pill bad" style="font-size:11px">rood</span> slechter · <span class="pill none" style="font-size:11px">grijs</span> gelijk of n.v.t. Kleur alleen bij marge en resultaat; kosten tonen het aandeel van de omzet. Gerealiseerd is in beide tabellen gelijk, alleen de prognose verschilt. Afwijking = gerealiseerd − prognose. EBITDA = resultaat + rente + afschrijvingen.</p>`;
-  const ds=FIN.per!=="ytd"&&FIN.docs.find(x=>x.id==="werkelijk-"+FIN.per);const tl=ds&&String(ds.toelichting||"").split("\n").map(x=>x.replace(/^[-•*]\s*/,"").trim()).filter(Boolean);
-  $("fin-toel").hidden=!(tl&&tl.length);if(tl&&tl.length)$("fin-toel").innerHTML=`<h3>Toelichting kostenontwikkeling · ${esc(mn(FIN.per)+" "+y)}</h3><ul style="margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7">${tl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  // Toelichting: los invulveld per maand (niet bij YTD). Alleen opnieuw opbouwen bij een andere maand, zodat typen niet verloren gaat.
+  $("fin-toel").hidden=FIN.per==="ytd"||!gm.length;
+  if(FIN.per!=="ytd"&&gm.length&&FIN.toelM!==FIN.per){FIN.toelM=FIN.per;const ds=FIN.docs.find(x=>x.id==="werkelijk-"+FIN.per)||{};
+    $("fin-toel").innerHTML=`<h3>Toelichting kostenontwikkeling · ${esc(mn(FIN.per)+" "+y)}</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Eigen opmerkingen bij deze maand. Zichtbaar voor alle admins.</p>
+      <textarea id="fin-toel-txt" rows="5" style="width:100%" placeholder="Bijvoorbeeld: kosten automatisering hoog door 4 Hostinger-abonnementen.">${esc(ds.toelichting||"")}</textarea>
+      <div class="row" style="margin-top:10px;gap:10px"><button class="btn primary" type="button" id="fin-toel-save">Opslaan</button><span class="muted" style="font-size:12px">${ds.toelichtingDoor?"Laatst bijgewerkt door "+esc(ds.toelichtingDoor):""}</span></div>`}
 }
+document.addEventListener("click",async e=>{if(!e.target.closest("#fin-toel-save")||!FIN.open)return;const m=FIN.toelM,id="werkelijk-"+m;
+  const old=FIN.docs.find(x=>x.id===id);if(!old){toast("Vul eerst de gerealiseerde cijfers van deze maand in.");return}
+  const {id:_,...d}=old;d.toelichting=$("fin-toel-txt").value.trim();d.toelichtingDoor=(S.meName||"").split(" ")[0];d.updatedAt=new Date().toISOString();
+  if(await save("financieel",id,d)){FIN.toelM=null;toast("Toelichting "+MONTHS[+m.slice(5)-1]+" opgeslagen");renderFin()}});
 
 /* ---------- Boot ---------- */
 async function boot(){
