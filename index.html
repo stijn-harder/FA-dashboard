@@ -566,15 +566,16 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="ph"><div><div class="eyebrow">Financieel</div><h1>Financieel</h1></div><button class="btn ghost" id="fin-lockbtn" type="button" hidden><svg><use href="#i-lock"/></svg>Vergrendelen</button></div>
       <div id="fin-lock"></div>
       <div id="fin-main" hidden>
+        <div id="fin-head"></div>
+        <div class="card"><h3 id="fin-ytd-t">Cijfers</h3><div class="muted" style="font-size:12px" id="fin-ytd-sub"></div>
+          <div class="seg" id="fin-per" style="margin:12px 0 4px"></div></div>
+        <div id="fin-ytd"></div>
+        <div class="card" id="fin-toel" hidden></div>
         <div class="card"><div class="row between" style="flex-wrap:wrap;gap:8px"><div><h3>Cashflow</h3><div class="muted" style="font-size:12px">Banksaldo + onderhanden werk + debiteuren − crediteuren − 2× maandkosten. Positief = na twee maanden vaste kosten nog geld over.</div></div><div class="muted" style="font-size:12px" id="fin-cf-per"></div></div>
           <div class="grid4" id="fin-cf-kpis" style="margin-top:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div></div>
         <div class="card"><h3>Cashflow bijwerken</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Banksaldo, debiteuren en crediteuren komen later automatisch uit Exact. Onderhanden werk en maandkosten vul je zelf in.</p>
           <form class="f" id="fin-cf-form" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"><label>Stand per<input id="fcf-datum" type="date" required></label><label>Banksaldo (€)<input id="fcf-bank" type="number" step="any" required></label><label>Onderhanden werk (€)<input id="fcf-ohw" type="number" step="any" required></label><label>Debiteuren (€)<input id="fcf-deb" type="number" step="any" required></label><label>Crediteuren (€)<input id="fcf-cred" type="number" step="any" required></label><label>Maandkosten (€)<input id="fcf-mk" type="number" step="any" required></label><div class="full row"><button class="btn primary" type="submit">Opslaan</button></div></form>
           <div class="tbl" id="fin-cf-hist" style="margin-top:14px"></div></div>
-        <div class="card"><h3 id="fin-ytd-t">Cijfers</h3><div class="muted" style="font-size:12px" id="fin-ytd-sub"></div>
-          <div class="seg" id="fin-per" style="margin:12px 0 4px"></div></div>
-        <div id="fin-ytd"></div>
-        <div class="card" id="fin-toel" hidden></div>
         <div class="card"><h3>Cijfers invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: gerealiseerd (uit Exact) of de begroting. Kosten als positief bedrag. Bij gerealiseerd kun je de netto-omzet uitsplitsen. Later halen we gerealiseerd automatisch uit Exact.</p>
           <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
       </div>
@@ -1527,6 +1528,22 @@ function renderFin(){
   $("fin-cf-hist").innerHTML=cf.length?`<table><thead><tr><th>Stand per</th><th class="r">Bank</th><th class="r">OHW</th><th class="r">Debiteuren</th><th class="r">Crediteuren</th><th class="r">Maandkosten</th><th class="r">Beschikbaar</th><th>Door</th><th></th></tr></thead><tbody>${cf.map(x=>{const v=finCF(x);return `<tr><td class="num">${dLabel(x.datum)}</td><td class="r num">${eur(x.bank)}</td><td class="r num">${x.ohw==null?'<span class="muted">–</span>':eur(x.ohw)}</td><td class="r num">${eur(x.deb)}</td><td class="r num">${eur(x.cred)}</td><td class="r num">${eur(x.mk)}</td><td class="r num" style="color:var(--${v>=0?"good":"bad"})"><b>${eur(v)}</b></td><td>${esc(x.door||"")}</td><td class="r"><button class="btn ghost" data-fin-del="${esc(x.id)}" style="padding:4px 10px;font-size:12px">Verwijderen</button></td></tr>`}).join("")}</tbody></table>`:"";
   // Cijfers: per maand of YTD, per begroting uitklapbaar, met trendgrafieken
   const y=S.month.slice(0,4),alle=[...Array(12)].map((_,i)=>y+"-"+pad(i+1)),gm=alle.filter(x=>finHas("werkelijk",x));
+  // Headline: gerealiseerd t/m laatste maand met cijfers, en wat er nog moet tot eind van het jaar.
+  {const mnL=x=>MONTHS[+x.slice(5)-1];
+   if(!gm.length){$("fin-head").innerHTML=""}else{
+    const last=gm[gm.length-1],H=finSom("werkelijk",gm),per=gm.length>1?mnL(gm[0]).slice(0,3)+"–"+mnL(last).slice(0,3):mnL(last).slice(0,3);
+    const pc=v=>H.omzet?(Math.round(v/H.omzet*1000)/10).toLocaleString("nl-NL")+"% van de omzet":"";
+    const kaart=(t,v,sub,donker)=>`<div class="card" style="${donker?"background:var(--navy);border-color:var(--navy);color:#fff":""}"><div class="eyebrow" style="${donker?"color:#9CB4C8":""}">${t}</div><div class="stat num" style="white-space:nowrap">${eur(v)}</div><div style="font-size:12px;${donker?"color:#C9D6E2":""}" class="${donker?"":"muted"}">${esc(sub)}</div></div>`;
+    const f=(S.odoo||{}).forecast||{},R=(fcBak(f,"rl")[y]||{}),fc=+R.ongewogen||0,lo=latestOrd(),op=lo?+lo.bedrag:0,dek=fc+op;
+    const restVan=last.slice(5)==="12"?null:mnL(alle[+last.slice(5)]).slice(0,3);
+    const nodig=v=>v<=0?`<td class="r num" style="color:var(--good);white-space:nowrap"><b>gehaald</b><div style="font-size:11px">+${eur(-v)} boven doel</div></td>`:`<td class="r num"><b>${eur(v)}</b></td>`;
+    const rij=s2=>{const bs="begroting-"+s2;if(!FIN.docs.some(d=>d.soort===bs))return "";const B=finSom(bs,alle);const nRes=B.res-H.res,nBr=B.bruto-H.bruto;const pct=nBr>0?Math.round(dek/nBr*100):null;const tv=nBr-dek;
+      return `<tr><td>Begroting ${s2} resultaat</td><td class="r num">${eur(B.res)}</td>${nodig(nRes)}<td class="r num">${eur(B.bruto)}</td>${nodig(nBr)}<td class="r num">${pct==null?"–":`<span class="pill ${pct>=100?"good":pct>=75?"warn":"bad"}">${pct}%</span>`}</td><td class="r num" style="white-space:nowrap;color:var(--${tv<=0?"good":"bad"})">${nBr<=0?"doel gehaald":tv<=0?"overschot "+eur(-tv):eur(tv)}</td></tr>`};
+    $("fin-head").innerHTML=`<div class="eyebrow" style="margin:4px 0 8px">Gerealiseerd t/m ${esc(mnL(last))} ${y}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px">${kaart("Netto-omzet",H.omzet,"gerealiseerd "+per,false)}${kaart("Bruto marge",H.bruto,"gerealiseerd "+per+" ("+pc(H.bruto)+")",true)}${kaart("Resultaat",H.res,"uit gewone bedrijfsuitoefening, "+per+" ("+pc(H.res)+")",true)}</div>
+      ${restVan?`<div class="eyebrow" style="margin:0 0 8px">Wat we nog moeten: ${restVan} t/m dec ${y}</div>
+      <div class="card tbl" style="padding:0"><table class="fin-tb"><thead><tr><th>Begroting</th><th class="r">Doel resultaat FY</th><th class="r">Nog nodig resultaat</th><th class="r">Doel bruto marge FY</th><th class="r">Nog nodig bruto marge</th><th class="r">Dekking (forecast + orderportefeuille)</th><th class="r">Nog te vinden</th></tr></thead><tbody>${rij("50k")}${rij("100k")}</tbody></table></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 22px">Nog nodig = doel uit de begroting min gerealiseerd t/m ${esc(mnL(last))}. Dekking = realisatieforecast ${y} uit Odoo (${eur(fc)}, ongewogen) plus orderportefeuille (${eur(op)}${lo?", stand "+dLabel(lo.datum):""}), afgezet tegen de nog benodigde bruto marge. Let op: de orderportefeuille is het totaal van alle getekende opdrachten, niet alleen ${y}.</p>`:""}`}}
   const mn=x=>MONTHS[+x.slice(5)-1],Mn=x=>mn(x).charAt(0).toUpperCase()+mn(x).slice(1);
   if(!FIN.per||(FIN.per!=="ytd"&&!gm.includes(FIN.per)))FIN.per=gm.length?gm[gm.length-1]:"ytd";
   const per=FIN.per==="ytd"?gm:[FIN.per],ytdL=gm.length?(gm.length>1?"jan–"+mn(gm[gm.length-1]).slice(0,3):mn(gm[0]).slice(0,3)):"";
