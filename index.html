@@ -389,6 +389,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .trechter .cv .pill{border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px}
 .fin-sc>summary{cursor:pointer;font-weight:700;font-size:15px;padding:2px 0 10px;list-style:none;display:flex;align-items:center;gap:8px}.fin-sc>summary::-webkit-details-marker{display:none}.fin-sc>summary::before{content:'▸';transition:transform .2s;display:inline-block}.fin-sc[open]>summary::before{transform:rotate(90deg)}
 .fin-tb thead th{background:var(--navy,#0D1B26);color:#fff}.fin-tb td.pc{text-align:right}.fin-tb .pill{border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}.fin-tb tr.sub td{background:var(--soft)}.fin-tb tr.it td{font-style:italic;color:var(--muted)}
+.fin-tb tr.split td{font-size:13px;background:var(--soft)}
 #charttip{position:fixed;z-index:60;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);white-space:nowrap}#charttip[hidden]{display:none}#charttip b{font-weight:700}.tipband{cursor:crosshair}.tipband:hover{fill:rgba(39,159,218,.08)}
 .kpi4{grid-template-columns:repeat(4,minmax(0,1fr))!important}@media(max-width:1100px){.kpi4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:600px){.kpi4{grid-template-columns:minmax(0,1fr)!important}}
 .fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
@@ -570,7 +571,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
           <div class="seg" id="fin-per" style="margin:12px 0 4px"></div></div>
         <div id="fin-ytd"></div>
         <div class="card" id="fin-toel" hidden></div>
-        <div class="card"><h3>Cijfers invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: gerealiseerd (uit Exact) of de begroting. Kosten als positief bedrag. Later halen we gerealiseerd automatisch uit Exact.</p>
+        <div class="card"><h3>Cijfers invullen</h3><p class="muted" style="font-size:12px;margin:2px 0 10px">Per maand: gerealiseerd (uit Exact) of de begroting. Kosten als positief bedrag. Bij gerealiseerd kun je de netto-omzet uitsplitsen. Later halen we gerealiseerd automatisch uit Exact.</p>
           <form class="f" id="fin-inv-form" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"><label>Maand<input id="fin-inv-maand" type="month" required></label><label>Soort<select id="fin-inv-soort"><option value="werkelijk">Gerealiseerd (Exact)</option><option value="begroting-50k">Begroting 50k resultaat</option><option value="begroting-100k">Begroting 100k resultaat</option></select></label><div class="full" id="fin-inv-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div><div class="full row"><button class="btn primary" type="submit">Opslaan</button><span class="muted" style="font-size:12px" id="fin-inv-note"></span></div></form></div>
       </div>
     </section>
@@ -1458,9 +1459,10 @@ $("snd").addEventListener("change",()=>{try{localStorage.setItem("fa-snd",$("snd
 const FIN_REGELS=[["omzet","Netto-omzet"],["kostprijs","Kostprijs van de omzet"],["uitbesteed","Kosten uitbesteed werk"],["lonen","Lonen en salarissen"],["sociaal","Sociale lasten"],["afschr","Afschrijvingen"],["personeel","Overige personeelskosten"],["kantoor","Kantoorkosten"],["verkoop","Verkoopkosten"],["auto","Autokosten"],["algemeen","Algemene kosten"],["rente","Rentelasten en soortgelijke kosten"]];
 const FIN_KOSTEN=["uitbesteed","lonen","sociaal","afschr","personeel","kantoor","verkoop","auto","algemeen"];
 const FIN={open:false,docs:[],per:null,sub:false,timer:0};
-function finCalc(r){const g=k=>+(r&&r[k])||0;const o={};FIN_REGELS.forEach(([k])=>o[k]=g(k));
+const OMZET_SPLIT=[["omzetOntwerp","Projecten met ontwerp"],["omzetZonder","Projecten zonder ontwerp"],["omzetVoor","Voortrajecten"],["omzetOverig","Overig"]];
+function finCalc(r){const g=k=>+(r&&r[k])||0;const o={};FIN_REGELS.forEach(([k])=>o[k]=g(k));OMZET_SPLIT.forEach(([k])=>o[k]=g(k));
   o.bruto=o.omzet-o.kostprijs;o.kosten=FIN_KOSTEN.reduce((a,k)=>a+o[k],0);o.bedr=o.bruto-o.kosten;o.res=o.bedr-o.rente;o.ebitda=o.res+o.rente+o.afschr;return o}
-function finSom(soort,maanden){const t={};maanden.forEach(m=>{const d=FIN.docs.find(x=>x.id===soort+"-"+m);if(d)FIN_REGELS.forEach(([k])=>t[k]=(t[k]||0)+(+(d.regels||{})[k]||0))});return finCalc(t)}
+function finSom(soort,maanden){const t={};maanden.forEach(m=>{const d=FIN.docs.find(x=>x.id===soort+"-"+m);if(d)[...FIN_REGELS,...OMZET_SPLIT].forEach(([k])=>t[k]=(t[k]||0)+(+(d.regels||{})[k]||0))});return finCalc(t)}
 const finHas=(soort,m)=>FIN.docs.some(x=>x.id===soort+"-"+m);
 const finCF=c=>(+c.bank||0)+(+c.ohw||0)+(+c.deb||0)-(+c.cred||0)-2*(+c.mk||0);
 function finLockHtml(){
@@ -1482,13 +1484,19 @@ document.addEventListener("submit",async e=>{
     const d={soort:"cashflow",datum:$("fcf-datum").value,bank:+$("fcf-bank").value||0,ohw:+$("fcf-ohw").value||0,deb:+$("fcf-deb").value||0,cred:+$("fcf-cred").value||0,mk:+$("fcf-mk").value||0,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(!d.datum)return;if(await save("financieel","cashflow-"+d.datum,d))toast("Cashflow opgeslagen per "+dLabel(d.datum));return}
   if(e.target.id==="fin-inv-form"){e.preventDefault();if(!FIN.open)return;const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;if(!m)return;
-    const d0=FIN.docs.find(x=>x.id===soort+"-"+m);const regels={};FIN_REGELS.forEach(([k])=>{const v=$("fin-r-"+k).value;if(v!=="")regels[k]=+v});
+    const d0=FIN.docs.find(x=>x.id===soort+"-"+m);const regels={};[...FIN_REGELS,...OMZET_SPLIT].forEach(([k])=>{const el=$("fin-r-"+k);if(el&&el.value!=="")regels[k]=+el.value});
     const d={soort,maand:m,regels,toelichting:d0&&d0.toelichting||undefined,door:(S.meName||"").split(" ")[0],updatedAt:new Date().toISOString()};
     if(await save("financieel",soort+"-"+m,d))toast($("fin-inv-soort").selectedOptions[0].textContent+" "+monthLabel(m)+" opgeslagen")}});
 function finFields(){const m=$("fin-inv-maand").value,soort=$("fin-inv-soort").value;const d=FIN.docs.find(x=>x.id===soort+"-"+m);const r=(d&&d.regels)||{};
-  $("fin-inv-fields").innerHTML=FIN_REGELS.map(([k,l])=>`<label>${l}<input id="fin-r-${k}" type="number" step="any" value="${r[k]??""}"></label>`).join("");
+  const inp=([k,l])=>`<label>${l}<input id="fin-r-${k}" type="number" step="any" value="${r[k]??""}"></label>`;
+  $("fin-inv-fields").innerHTML=inp(FIN_REGELS[0])+(soort==="werkelijk"?`<div style="grid-column:1/-1;border:1px dashed var(--line);border-radius:12px;padding:10px 12px"><div class="eyebrow" style="margin-bottom:8px">Netto-omzet uitgesplitst</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">${OMZET_SPLIT.map(inp).join("")}</div><div class="muted" style="font-size:12px;margin-top:8px" id="fin-split-check"></div></div>`:"")+FIN_REGELS.slice(1).map(inp).join("");finSplitCheck();
   $("fin-inv-note").textContent=d?`Al ingevuld${d.door?" door "+d.door:""}. Opslaan overschrijft.`:"Nog niet ingevuld."}
 document.addEventListener("change",e=>{if(e.target.id==="fin-inv-maand"||e.target.id==="fin-inv-soort")finFields()});
+function finSplitCheck(){const el=$("fin-split-check");if(!el)return;const v=k=>+($("fin-r-"+k)||{}).value||0;const som=OMZET_SPLIT.reduce((a,[k])=>a+v(k),0),tot=v("omzet");
+  if(!som){el.textContent="Optioneel. De vier delen moeten samen de netto-omzet zijn.";el.style.color="";return}const d=tot-som;
+  el.textContent=Math.abs(d)<1?"Klopt: de delen tellen op tot de netto-omzet.":`Samen ${eur(som)}, netto-omzet ${eur(tot)}. Nog ${d>0?"niet verdeeld":"te veel verdeeld"}: ${eur(Math.abs(d))}.`;el.style.color=Math.abs(d)<1?"var(--good)":"var(--warn)"}
+document.addEventListener("input",e=>{if(e.target.id&&e.target.id.startsWith("fin-r-omzet"))finSplitCheck()});
+document.addEventListener("click",e=>{if(e.target.closest("[data-omzet-tgl]")){FIN.omzetOpen=!FIN.omzetOpen;renderFin()}});
 document.addEventListener("click",async e=>{const b=e.target.closest("#fin-per button");if(b){FIN.per=b.dataset.p;renderFin();return}
   if(e.target.closest("#fin-lockbtn")){finLock();return}
   const x=e.target.closest("[data-fin-del]");if(x){await del("financieel",x.dataset.finDel,x)}});
@@ -1520,7 +1528,9 @@ function renderFin(){
       const w=W[k],b=B[k],d=w-b,pw=k==="omzet"||k==="kostprijs"?null:pv(w,W.omzet),pb=k==="omzet"||k==="kostprijs"?null:pv(b,B.omzet);
       const pcls=pw==null?"":key&&pb!=null?((pw-pb)*sg>=0?"good":"bad"):"none";const bo=x=>cls==="sub"?`<b>${x}</b>`:x;
       const dc=Math.abs(d)<1?"muted":d*sg>=0?"good":"bad";
-      return `<tr class="${cls||""}"><td>${bo(esc(l))}</td><td class="r num">${bo(eur(w))}</td><td class="pc">${pw==null?'<span class="muted">–</span>':`<span class="pill ${pcls}">${pS(pw)}</span>`}</td><td class="r num">${eur(b)}</td><td class="pc">${pb==null?'<span class="muted">–</span>':`<span class="pill none">${pS(pb)}</span>`}</td><td class="r num" style="color:var(--${dc})">${bo(eur(d))}</td></tr>`}).join("")}</tbody></table></div>`;
+      const isO=k==="omzet",heeftSplit=OMZET_SPLIT.some(([q])=>W[q]);
+      const subRows=isO&&FIN.omzetOpen?OMZET_SPLIT.map(([q,ql])=>`<tr class="split"><td style="padding-left:28px">${esc(ql)}</td><td class="r num">${W[q]?eur(W[q]):'<span class="muted">–</span>'}</td><td class="pc">${W[q]&&W.omzet?`<span class="pill none">${pS(W[q]/W.omzet*100)}</span>`:'<span class="muted">–</span>'}</td><td class="r"><span class="muted">–</span></td><td class="pc"><span class="muted">–</span></td><td class="r"><span class="muted">–</span></td></tr>`).join("")+(()=>{const rest=W.omzet-OMZET_SPLIT.reduce((a,[q])=>a+W[q],0);return Math.abs(rest)>=1?`<tr class="split"><td style="padding-left:28px" class="muted">${heeftSplit?"Niet verdeeld":"Nog niet uitgesplitst"}</td><td class="r num muted">${eur(rest)}</td><td></td><td></td><td></td><td></td></tr>`:""})():"";
+      return `<tr class="${cls||""}"${isO?' data-omzet-tgl style="cursor:pointer" title="Klik om uit te splitsen"':""}><td>${isO?`<span style="display:inline-block;width:14px;transition:transform .2s;transform:rotate(${FIN.omzetOpen?90:0}deg)">▸</span>`:""}${bo(esc(l))}</td><td class="r num">${bo(eur(w))}</td><td class="pc">${pw==null?'<span class="muted">–</span>':`<span class="pill ${pcls}">${pS(pw)}</span>`}</td><td class="r num">${eur(b)}</td><td class="pc">${pb==null?'<span class="muted">–</span>':`<span class="pill none">${pS(pb)}</span>`}</td><td class="r num" style="color:var(--${dc})">${bo(eur(d))}</td></tr>`+subRows}).join("")}</tbody></table></div>`;
   const chart=(t,ka,act,bud)=>{const Wd=300,H=130,pl=6,pr=48,pt=14,pb=18;const vals=[...act,...bud].filter(v=>v!=null);const mx=Math.max(0,...vals),mi=Math.min(0,...vals),rg=(mx-mi)||1;const n=bud.length;
       const X=i=>pl+(Wd-pl-pr)*(n>1?i/(n-1):.5),Y=v=>pt+(H-pt-pb)*(1-(v-mi)/rg);
       const ln=(a,st)=>{const pts=a.map((v,i)=>v==null?null:[X(i),Y(v)]).filter(Boolean);return pts.length?`<polyline points="${pts.map(p=>p.map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="none" ${st}/>${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" ${st.replace("stroke-dasharray=\"4 3\"","")} fill="var(--card)"/>`).join("")}`:""};
