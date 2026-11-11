@@ -389,6 +389,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .trechter .cv .pill{border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px}
 .fin-sc>summary{cursor:pointer;font-weight:700;font-size:15px;padding:2px 0 10px;list-style:none;display:flex;align-items:center;gap:8px}.fin-sc>summary::-webkit-details-marker{display:none}.fin-sc>summary::before{content:'▸';transition:transform .2s;display:inline-block}.fin-sc[open]>summary::before{transform:rotate(90deg)}
 .fin-tb thead th{background:var(--navy,#0D1B26);color:#fff}.fin-tb td.pc{text-align:right}.fin-tb .pill{border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}.fin-tb tr.sub td{background:var(--soft)}.fin-tb tr.it td{font-style:italic;color:var(--muted)}
+#charttip{position:fixed;z-index:60;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);white-space:nowrap}#charttip[hidden]{display:none}#charttip b{font-weight:700}.tipband{cursor:crosshair}.tipband:hover{fill:rgba(39,159,218,.08)}
 .kpi4{grid-template-columns:repeat(4,minmax(0,1fr))!important}@media(max-width:1100px){.kpi4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:600px){.kpi4{grid-template-columns:minmax(0,1fr)!important}}
 .fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
 .pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
@@ -1091,6 +1092,14 @@ function renderPortfolio(o){
   </section>`;
 }
 function today_(){return today()}
+
+/* ---------- Hover-tooltips voor grafieken: elk element met data-tip ---------- */
+function tipBanden(n,X,top,bot,teksten){if(!n)return "";const w=n>1?(X(1)-X(0)):40;return teksten.map((t,i)=>`<rect class="tipband" x="${(X(i)-w/2).toFixed(1)}" y="${top}" width="${w.toFixed(1)}" height="${bot-top}" fill="transparent" data-tip="${esc(t)}"/>`).join("")}
+(function(){const tip=document.createElement("div");tip.id="charttip";tip.hidden=true;document.body.appendChild(tip);
+  const zet=e=>{const el=e.target.closest&&e.target.closest("[data-tip]");if(!el){tip.hidden=true;return}tip.innerHTML=el.dataset.tip.split("\n").map((r,i)=>i?`<div>${esc(r)}</div>`:`<b>${esc(r)}</b>`).join("");tip.hidden=false;
+    const x=e.clientX,y=e.clientY,r=tip.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(window.innerWidth-r.width-8,x+12))+"px";tip.style.top=Math.max(8,y-r.height-12)+"px"};
+  document.addEventListener("mousemove",zet);document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-tip]"))zet(e)});document.addEventListener("scroll",()=>tip.hidden=true,true)})();
+
 /* ---------- Target orderportefeuille ----------
    Opgeslagen in collectie 'orderportefeuille' met id 'target' (zonder veld 'datum', zodat het niet als weekstand telt).
    Pad: rechte lijn van de stand op de startdatum naar het target op de einddatum. */
@@ -1519,7 +1528,8 @@ function renderFin(){
       return `<div><h4>${t}</h4><svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${t}: gerealiseerd tegenover prognose">${mi<0?`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`:""}<text x="${pl}" y="9">${eurK(mx)}</text>
         ${ln(bud,'stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"')}${ln(act,'stroke="var(--fg)" stroke-width="2"')}
         ${lb!=null?`<text x="${Wd-pr+4}" y="${Y(lb)+(lb>=la?-2:9)}" style="fill:var(--muted)">${eurK(lb)}</text>`:""}${la!=null?`<text x="${Wd-pr+4}" y="${Y(la)+(la>lb?-2:9)}" style="fill:var(--fg);font-weight:700">${eurK(la)}</text>`:""}
-        ${bud.map((_,i)=>`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mn(gm[i]).slice(0,3)}</text>`).join("")}</svg></div>`};
+        ${bud.map((_,i)=>`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mn(gm[i]).slice(0,3)}</text>`).join("")}
+        ${tipBanden(n,X,pt-6,H-pb,bud.map((_,i)=>`${mn(gm[i])} ${y}\nGerealiseerd: ${act[i]==null?"–":eur(act[i])}\nPrognose: ${bud[i]==null?"–":eur(bud[i])}`))}</svg></div>`};
   const sc=s2=>{const bs="begroting-"+s2,B=finSom(bs,per);const heeft=FIN.docs.some(d=>d.soort===bs);
     const A=gm.map(x=>finSom("werkelijk",[x])),P=gm.map(x=>finSom(bs,[x]));
     return `<details class="card fin-sc" open><summary>Begroting ${s2} resultaat</summary>${heeft?tbl(B):`<div class="empty">Nog geen begroting ${s2} ingevuld.</div>`}
@@ -1557,7 +1567,9 @@ function trendLijn(t,mnd,act,tgt,fmt){const Wd=300,H=140,pl=14,pr=52,pt=18,pb=18
   const step=n>8?2:1;
   return `<div><h4>${t}</h4><svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${t} per maand: gerealiseerd tegenover target"><text x="2" y="10">${fmt(mx)}</text><line x1="${pl}" x2="${Wd-pr}" y1="${Y(mi)}" y2="${Y(mi)}" stroke="var(--line)"/>
     ${ln(tgt,'stroke="var(--muted)" stroke-width="1.5"',1)}${ln(act,'stroke="var(--fg)" stroke-width="2"')}${lab(lt,"fill:var(--muted)",!up)}${lab(la,"fill:var(--fg);font-weight:700",up)}
-    ${mnd.map((m,i)=>i%step&&i!==n-1?"":`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mKort(m)}</text>`).join("")}</svg></div>`}
+    ${mnd.map((m,i)=>i%step&&i!==n-1?"":`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${mKort(m)}</text>`).join("")}
+    ${tipBanden(n,X,pt-6,H-pb,mnd.map((m,i)=>`${monthLabel(m)}\nGerealiseerd: ${act[i]==null?"–":fmtVol(fmt,act[i])}\nTarget: ${tgt[i]==null?"–":fmtVol(fmt,tgt[i])}`))}</svg></div>`}
+const fmtVol=(fmt,v)=>fmt===eurK?eur(v):fmt(v);
 const fmtAantal=v=>Math.round(v).toLocaleString("nl-NL");
 function renderTrends(){if(!$("ov-trends"))return;const mnd=trendMaanden();const K=S.kpi||{};
   const val=(m,f,calc)=>{const d=K[m];if(d&&d[f]!=null&&d[f]!=="")return +d[f];return m>=KPI_LIVE_VANAF?calc(stats(m)):null};
