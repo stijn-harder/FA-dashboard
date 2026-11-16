@@ -1678,7 +1678,8 @@ async function boot(){
     try{const w=await user.can("data.write");if(w===false)S.readOnly=true}catch(e){}}
   let loaded=0;const done=()=>{if(++loaded>=4){S.loaded=true;setStatus(S.readOnly?"Je kijkt mee met leesrechten. Vraag Stijn om bijdrager-rechten om zelf in te vullen.":"");setLive(true,"Live · iedereen ziet direct wijzigingen")}};
   const lost=()=>{setLive(false,"Verbinding weg");setStatus("De verbinding met de database is weggevallen. Herlaad de pagina.")};
-  const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()}));render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
+  // Leads met telt:false (dubbel of in Odoo samengevoegd, gemarkeerd door de leadcontrole) tellen nergens mee.
+  const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>key!=="leads"||x.telt!==false);render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
   sub("intakes","intakes");sub("marge","marge");sub("leads","leads");
   db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
