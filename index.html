@@ -391,6 +391,8 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .fin-tb thead th{background:var(--navy,#0D1B26);color:#fff}.fin-tb td.pc{text-align:right}.fin-tb .pill{border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}.fin-tb tr.sub td{background:var(--soft)}.fin-tb tr.it td{font-style:italic;color:var(--muted)}
 .fin-tb tr.split td{font-size:13px;background:var(--soft)}
 #charttip{position:fixed;z-index:60;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);white-space:nowrap}#charttip[hidden]{display:none}#charttip b{font-weight:700}.tipband{cursor:crosshair}.tipband:hover{fill:rgba(39,159,218,.08)}
+.utm-t tr[data-uk]{cursor:pointer}.utm-t tr[data-uk]:hover td{background:var(--soft)}.utm-t tr.sel td{background:var(--soft);box-shadow:inset 0 -1px 0 var(--blue)}.utm-t .tg{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;width:18px;padding:0;display:inline-block}.utm-t .tg.op{transform:rotate(90deg)}.utm-t .sp{display:inline-block;width:18px}.utm-t tr.l2 td:first-child{padding-left:30px}.utm-t tr.l3 td:first-child{padding-left:52px}.utm-t tr.l2 td,.utm-t tr.l3 td{font-size:13px}.utm-t tr.tot td{border-top:2px solid var(--line)}
+.kpi6{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1200px){.kpi6{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){.kpi6{grid-template-columns:minmax(0,1fr)}}
 .kpi4{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(max-width:600px){.kpi4{grid-template-columns:minmax(0,1fr)!important}}
 .fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
 .pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
@@ -503,11 +505,11 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Leads &amp; bronnen</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
       <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
       <div id="bron-alert"></div>
-      <div class="grid4" id="lead-kpis"></div>
+      <div class="grid4 kpi6" id="lead-kpis"></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Funnel per bron</h3><div class="muted" style="font-size:12px">Van lead naar intake, voortraject en realisatie. Rood = loopt het verst achter op de rest.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="bron-funnel" class="tbl" style="margin-top:8px"></div></div>
-      <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Per bron</h3><div class="muted" style="font-size:12px">Waar de leads vandaan komen. Hierop sturen we wat we opschalen.</div></div><div class="seg" id="bron-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="lead-bron" class="tbl" style="margin-top:8px"></div></div>
+      <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Wat levert het op</h3><div class="muted" style="font-size:12px">Leads die in deze periode binnenkwamen en wat eruit kwam, per bron, campagne en video. Klik op een rij voor de leads, op ▸ om open te klappen.</div></div><div class="seg" id="utm-range"><button type="button" data-r="w">Deze week</button><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="utm-tabel" class="tbl" style="margin-top:8px"></div></div>
       <div class="card chart"><div class="row between" style="margin-bottom:8px"><h3 id="lead-chart-t">Per dag</h3><div class="legend" id="lead-legend"></div></div><div id="lead-chart"></div></div>
-      <div class="card tbl" id="lead-table"></div>
+      <details class="card fin-sc" id="lead-lijst"><summary id="lead-lijst-t">Leadlijst</summary><div id="lead-table" class="tbl"></div></details>
     </section>
 
     <section data-p="socials" hidden>
@@ -809,7 +811,7 @@ function bronVan(l){const src=String(l.bron||"").toLowerCase().trim(),med=String
   if(src==="google")return ads?"Google Ads":"Google organisch";
   if(src&&src!=="ebook"&&src!=="onbekend")return BRON_NAAM[src]||(src.charAt(0).toUpperCase()+src.slice(1));
   const hand=String(l.leadbron||l.kanaal||"").trim();
-  if(hand&&!/^website$/i.test(hand)&&!/^ebook/i.test(hand))return hand.replace(/ \(.*\)$/,"");
+  if(hand&&!/^website$/i.test(hand)&&!/^e-?book/i.test(hand))return hand.replace(/ \(.*\)$/,"");
   return "Onbekend (geen bron)"}
 /* ---------- Funnel, bronnen, kosten en rendement ---------- */
 const BRON_OPTIES=["Meta ads","Google organisch","Google Ads","Instagram organisch","Instagram bio","Instagram volgend","Facebook organisch","YouTube","ChatGPT","Bing","Direct (website)","LinkedIn","TikTok","Netwerk","Aanbeveling","Inkomend belletje","Beurs","Koud bellen","Koude mail","Onbekend (geen bron)"];
@@ -865,7 +867,7 @@ function trechterHtml(F){
   h+=`<div class="cv" style="margin-top:4px">Van lead naar realisatie: <b>${pctS(F.R.length,F.L.length)}</b> · bruto marge ${eurK(F.M.reduce((a,x)=>a+(+x.bedrag||0),0))}</div>`;
   return `<div class="trechter" role="img" aria-label="Funnel: ${lv.map(x=>x[0]+" "+x[1]).join(", ")}">${h}</div>`}
 function renderFunnel(){const F=funnelData();
-  document.querySelectorAll(".fun-range button,#bron-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===F.P.j)));
+  document.querySelectorAll(".fun-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===F.P.j)));
   $("trechter").innerHTML=trechterHtml(F);
   $("bron-alert-ov").innerHTML=alertHtml(F)+`<p class="muted" style="font-size:12px;margin:10px 0 0">Intakes, voortrajecten en realisaties tellen in de periode waarin ze zijn ingepland of geboekt. Een lead van vorige maand kan dus deze maand een intake worden.</p>`;
   $("bron-alert").innerHTML=alertHtml(F);
@@ -897,15 +899,52 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="ks-form")return;e
   if(!d.maand||!d.bedrag)return;if(await save("kosten","hand-"+Date.now().toString(36),d)){toast("Kosten opgeslagen");$("ks-bedrag").value="";$("ks-oms").value=""}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-ks-del]");if(b){await del("kosten",b.dataset.ksDel,b);return}
   const r=e.target.closest(".fun-range button");if(r){S.bronRange=r.dataset.r;render()}});
-function renderBron(m,L){
-  const jaar=S.bronRange==="j";const set=jaar?S.leads.filter(l=>String(l.datum||"").slice(0,4)===m.slice(0,4)&&String(l.datum||"")<=m+"-31"):L;
-  document.querySelectorAll("#bron-range button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.r==="j")===jaar)));
-  const T={};set.forEach(l=>{const b=bronVan(l);const r=T[b]=T[b]||{e:0,o:0,x:0};if(l.type==="E-book")r.e++;else if(l.type==="Offerteaanvraag")r.o++;else r.x++});
-  const rows=Object.entries(T).map(([b,r])=>[b,r,r.e+r.o+r.x]).sort((a,b)=>b[2]-a[2]||a[0].localeCompare(b[0]));const max=Math.max(1,...rows.map(r=>r[2]));
-  const tot={e:0,o:0,x:0};rows.forEach(([,r])=>{tot.e+=r.e;tot.o+=r.o;tot.x+=r.x});const n=tot.e+tot.o+tot.x;
-  const cel=(v,k)=>`<td class="r num"${v?` data-bk="${k}"`:""}>${v||'<span class="muted">0</span>'}</td>`;
-  $("lead-bron").innerHTML=rows.length?`<table><thead><tr><th>Bron</th><th class="r">Softleads</th><th class="r">Offerteaanvragen</th><th class="r">Overige</th><th class="r">Totaal</th><th style="width:30%">Aandeel</th></tr></thead><tbody>${rows.map(([b,r,t])=>`<tr data-bron="${esc(b)}"><td data-bk="l"><b>${esc(b)}</b></td>${cel(r.e,"e")}${cel(r.o,"o")}${cel(r.x,"x")}<td class="r num" data-bk="l"><b>${t}</b></td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)"><i style="width:${r.o/max*100}%;background:#279FDA"></i><i style="width:${r.e/max*100}%;background:#9CCBEA"></i><i style="width:${r.x/max*100}%;background:var(--fg)"></i></div><span class="muted num" style="font-size:12px;min-width:34px;text-align:right">${Math.round(t/n*100)}%</span></div></td></tr>`).join("")}<tr data-bron=""><td><b>Totaal</b></td>${cel(tot.e,"e")}${cel(tot.o,"o")}${cel(tot.x,"x")}<td class="r num"${n?' data-bk="l"':""}><b>${n}</b></td><td></td></tr></tbody></table><p class="muted" style="font-size:12px;margin:8px 0 0">Klik op een bron of getal om te zien om welke leads het gaat.</p>`:`<div class="empty">Nog geen leads in ${jaar?m.slice(0,4):esc(monthLabel(m))}.</div>`}
-document.addEventListener("click",e=>{const b=e.target.closest("#bron-range button");if(!b)return;S.bronRange=b.dataset.r;render()});
+/* ---------- Wat levert het op: bron > campagne > video (verrijking uit Odoo via de leadcontrole) ---------- */
+// Uitkomst van een lead: gewonnen als de lead of een vervolgkans gewonnen is; open als er nog iets loopt; anders afgesloten.
+function uitkomst(l){const v=l.verrijking;if(!v)return null;
+  if(v.status==="gewonnen"||v.vervolgStatus==="gewonnen")return "gewonnen";
+  if(v.status==="open"||v.vervolgStatus==="open")return "open";return "afgesloten"}
+const leadMarge=l=>{const v=l.verrijking;return v?(v.status==="gewonnen"?(+v.bedrag||0):0)+(+v.vervolgBedrag||0):0};
+const leadWonOp=l=>{const v=l.verrijking||{};return [v.status==="gewonnen"?v.gewonnenOp:null,v.vervolgGewonnenOp].filter(Boolean).sort().pop()||null};
+const UIT_PILL={gewonnen:"good",open:"warn",afgesloten:"none"};
+function utmPeriode(){const r=S.uRange||"m",m=S.month;
+  if(r==="j")return {r,label:"januari t/m "+monthLabel(m),van:m.slice(0,4)+"-01-01",tot:m+"-31"};
+  if(r==="w"){const ref=m===curMonth()?today():m+"-"+pad(dim(m));const d=new Date(ref+"T12:00:00");const ma=new Date(d);ma.setDate(d.getDate()-((d.getDay()+6)%7));const zo=new Date(ma);zo.setDate(ma.getDate()+6);
+    const f=x=>x.getFullYear()+"-"+pad(x.getMonth()+1)+"-"+pad(x.getDate());return {r,label:"week van "+dLabel(f(ma))+" t/m "+dLabel(f(zo)),van:f(ma),tot:f(zo)}}
+  return {r,label:monthLabel(m),van:m+"-01",tot:m+"-31"}}
+// Een vervolgkans die (van vóór de regel) als lead in de cockpit staat telt hier niet mee: de uitkomst staat bij de oorspronkelijke lead.
+const nieuweLead=l=>!(l.verrijking&&l.verrijking.vervolgVan);
+function utmLeads(){const P=utmPeriode();return {P,L:S.leads.filter(l=>{const d=String(l.datum||"");return d>=P.van&&d<=P.tot&&nieuweLead(l)})}}
+function utmBoom(L){const tel={};L.forEach(l=>{const b=bronVan(l);tel[b]=(tel[b]||0)+1});
+  const OV="Overig / geen bron",isOv=b=>b==="Onbekend (geen bron)"||tel[b]<3;
+  const root={k:"",kids:{}};const node=(par,k,naam,lvl)=>par.kids[k]=par.kids[k]||{k,naam,lvl,kids:{},L:[]};
+  L.forEach(l=>{const v=l.verrijking||{},b=bronVan(l);const path=[];
+    if(isOv(b)){path.push(["o",OV]);path.push(["o|"+b,b])}
+    else{path.push(["b|"+b,b]);path.push(["b|"+b+"|"+(v.campagne||""),v.campagne||"Geen campagne"]);path.push(["b|"+b+"|"+(v.campagne||"")+"|"+(v.content||""),v.content||"Geen video"])}
+    let cur=root;path.forEach(([k,n],i)=>{cur=node(cur,k,n,i+1);cur.L.push(l)});l._uk=path.map(x=>x[0])});
+  return root}
+function utmCijfers(L){const r={n:L.length,open:0,af:0,won:0,marge:0};L.forEach(l=>{const u=uitkomst(l);if(u==="open")r.open++;else if(u==="afgesloten")r.af++;else if(u==="gewonnen"){r.won++;r.marge+=leadMarge(l)}});return r}
+function renderUtm(){const {P,L}=utmLeads();S.uOpen=S.uOpen||{};
+  document.querySelectorAll("#utm-range button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.r===P.r)));
+  const root=utmBoom(L);const z=v=>v?v:'<span class="muted">0</span>';let html="";
+  const kidsVan=n=>{const k=Object.values(n.kids).sort((a,b)=>(a.k==="o")-(b.k==="o")||b.L.length-a.L.length||a.naam.localeCompare(b.naam));
+    // een enkel kind zonder campagne of video voegt niets toe
+    return k.length===1&&(k[0].naam==="Geen campagne"||k[0].naam==="Geen video")&&!Object.keys(k[0].kids).length||k.length===1&&k[0].naam==="Geen campagne"&&Object.values(k[0].kids).every(x=>x.naam==="Geen video")?[]:k};
+  const rij=n=>{const c=utmCijfers(n.L),kids=kidsVan(n),open=!!S.uOpen[n.k];
+    html+=`<tr class="l${n.lvl}${S.uFilter===n.k?" sel":""}" data-uk="${esc(n.k)}"><td>${kids.length?`<button type="button" class="tg${open?" op":""}" data-tg="${esc(n.k)}" aria-label="Openklappen">▸</button>`:'<span class="sp"></span>'}${n.lvl===1?`<b>${esc(n.naam)}</b>`:esc(n.naam)}</td><td class="r num">${c.n}</td><td class="r num">${z(c.open)}</td><td class="r num">${z(c.af)}</td><td class="r num">${c.won?`<b>${c.won}</b>`:z(0)}</td><td class="r num">${c.marge?`<b>${eurK(c.marge)}</b>`:'<span class="muted">–</span>'}</td></tr>`;
+    if(open)kids.forEach(rij)};
+  kidsVan(root).forEach(rij);const t=utmCijfers(L);
+  $("utm-tabel").innerHTML=L.length?`<table class="utm-t"><thead><tr><th>Bron · campagne · video</th><th class="r">Leads</th><th class="r">Open</th><th class="r" title="Verloren, of gearchiveerd zonder deal">Afgesloten</th><th class="r">Gewonnen</th><th class="r">Bruto marge</th></tr></thead><tbody>${html}<tr class="tot"><td><b>Totaal</b> <span class="muted" style="font-size:12px">${esc(P.label)}</span></td><td class="r num"><b>${t.n}</b></td><td class="r num">${t.open}</td><td class="r num">${t.af}</td><td class="r num"><b>${t.won}</b></td><td class="r num"><b>${t.marge?eurK(t.marge):"–"}</b></td></tr></tbody></table>`:`<div class="empty">Geen leads in ${esc(P.label)}.</div>`;
+  renderLeadLijst(L,P)}
+function renderLeadLijst(L,P){const f=S.uFilter,rows=[...L].filter(l=>!f||(l._uk||[]).includes(f)).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));
+  const naam=f?(f.split("|").pop()||(f.split("|").length>2?(f.split("|").length>3?"Geen video":"Geen campagne"):"")):"";
+  $("lead-lijst-t").innerHTML=`Leadlijst <span class="muted" style="font-weight:500;font-size:13px">${rows.length} ${rows.length===1?"lead":"leads"} · ${esc(P.label)}${f?` · ${esc(f==="o"?"Overig / geen bron":naam)} <button type="button" class="btn ghost" data-uwis style="padding:2px 10px;font-size:12px;margin-left:6px">Filter wissen</button>`:""}</span>`;
+  $("lead-table").innerHTML=rows.length?`<table><thead><tr><th>Lead</th><th>Binnen</th><th>Type</th><th>Bron</th><th>Campagne · video</th><th>Status</th></tr></thead><tbody>${rows.map(l=>{const v=l.verrijking||{},u=uitkomst(l),mg=leadMarge(l);
+    return `<tr><td><b>${esc(l.naam)}</b>${v.vervolgNaam?`<div class="muted" style="font-size:11px">${esc(v.vervolgNaam)}</div>`:""}</td><td class="num">${dLabel(l.datum)}</td><td><span class="chip">${esc(l.type==="E-book"?"Softlead":l.type)}</span></td><td>${esc(bronVan(l))}</td><td class="muted" style="font-size:12px">${esc([v.campagne,v.content].filter(Boolean).join(" · "))}</td><td>${u?`<span class="pill ${UIT_PILL[u]}" style="border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600">${u==="gewonnen"&&mg?"gewonnen · "+eurK(mg):u}</span>`:'<span class="muted">–</span>'}${v.fase&&u==="open"?`<div class="muted" style="font-size:11px">${esc(v.fase)}</div>`:""}</td></tr>`}).join("")}</tbody></table>`:`<div class="empty">Geen leads.</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("#utm-range button");if(b){S.uRange=b.dataset.r;S.uFilter=null;renderUtm();return}
+  const t=e.target.closest("#utm-tabel [data-tg]");if(t){S.uOpen=S.uOpen||{};S.uOpen[t.dataset.tg]=!S.uOpen[t.dataset.tg];renderUtm();return}
+  const r=e.target.closest("#utm-tabel tr[data-uk]");if(r){S.uFilter=S.uFilter===r.dataset.uk?null:r.dataset.uk;renderUtm();if(S.uFilter){$("lead-lijst").open=true;$("lead-lijst").scrollIntoView({behavior:"smooth",block:"start"})}return}
+  if(e.target.closest("[data-uwis]")){e.preventDefault();S.uFilter=null;renderUtm()}});
 // Klik op een bron of getal in 'Per bron' of 'Funnel per bron': laat zien om welke leads, intakes of deals het gaat.
 function leadLijst(L,toonBron){const rows=[...L].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));
   return rows.length?`<div class="tbl"><table><thead><tr><th>Lead</th><th>Binnen</th><th>Type</th>${toonBron?"<th>Bron</th>":""}<th>Leadbron / UTM</th></tr></thead><tbody>${rows.map(l=>`<tr><td><b>${esc(l.naam)}</b></td><td class="num">${dLabel(l.datum)}</td><td><span class="chip">${esc(l.type==="E-book"?"Softlead":l.type)}</span></td>${toonBron?`<td>${esc(bronVan(l))}</td>`:""}<td class="muted" style="font-size:12px">${esc([l.leadbron||l.kanaal,[l.bron,l.medium].filter(Boolean).join(" / ")].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Geen leads.</div>`}
@@ -924,12 +963,15 @@ function bronDetail(bron,k,maand){const F=funnelData(),alle=!bron;
   if(k==="v"||k==="r"){const s=k==="v"?"Voortraject":"Realisatie";const MM=M.filter(x=>x.soort===s);return openDetail(k==="v"?"Voortrajecten":"Realisaties",`${wie} · ${MM.length} deals.`,dealLijst(MM))}
   if(k==="m")return openDetail("Bruto marge",`${wie} · ${M.length} deals.`,dealLijst(M));
   openDetail(alle?"Alle bronnen":bron,F.P.label,`<h3>Leads (${L.length})</h3>${leadLijst(L,alle)}<h3 style="margin-top:16px">Intakes (${I.length})</h3>${intakeLijst(I)}<h3 style="margin-top:16px">Deals (${M.length})</h3>${dealLijst(M)}`)}
-document.addEventListener("click",e=>{const c=e.target.closest("#lead-bron [data-bk],#bron-funnel [data-bk],#lead-kpis [data-bk]");if(!c)return;const tr=c.closest("[data-bron]");if(!tr)return;bronDetail(tr.dataset.bron,c.dataset.bk,!!tr.dataset.maand)});
+document.addEventListener("click",e=>{const c=e.target.closest("#bron-funnel [data-bk],#lead-kpis [data-bk]");if(!c)return;const tr=c.closest("[data-bron]");if(!tr)return;bronDetail(tr.dataset.bron,c.dataset.bk,!!tr.dataset.maand)});
 function renderLeads(){
   const m=S.month,s=stats(m),L=s.L,T=s.T,j=judge(L.length,T.fa_leads,m,false);
   const cnt=k=>L.filter(l=>l.type===k).length;
-  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:""],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social"]]
-    .map(([k,v,sub],i)=>`<div class="card" data-bron="" data-maand="1"${v?` data-bk="${["l","o","e","x"][i]}" title="Klik om de leads te zien"`:""}><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
+  const jr=S.leads.filter(l=>nieuweLead(l)&&String(l.datum||"").slice(0,4)===m.slice(0,4)&&String(l.datum||"")<=m+"-31");
+  const won=jr.filter(l=>uitkomst(l)==="gewonnen"&&ym(leadWonOp(l))===m),wonJ=jr.filter(l=>uitkomst(l)==="gewonnen"),som=a=>a.reduce((x,l)=>x+leadMarge(l),0),opn=jr.filter(l=>uitkomst(l)==="open").length;
+  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:"","l"],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website","o"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars","e"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social","x"],
+    ["Gewonnen deze maand",won.length,`${eurK(som(won))} bruto marge · dit jaar ${wonJ.length} (${eurK(som(wonJ))})`,null],["Open",opn,`leads van dit jaar waar nog iets loopt in Odoo`,null]]
+    .map(([k,v,sub,bk])=>`<div class="card" data-bron="" data-maand="1"${v&&bk?` data-bk="${bk}" title="Klik om de leads te zien"`:""}><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
   $("lead-legend").innerHTML=Object.entries(TYPE_COL).map(([k,c])=>`<span style="--c:${c}">${k==="E-book"?"Softlead (e-book)":k}</span>`).join("");
   $("lead-chart-t").textContent="Per dag · "+monthLabel(m);
   const n=dim(m);
@@ -942,9 +984,7 @@ function renderLeads(){
     [["o","#279FDA"],["e","#9CCBEA"],["x","var(--fg)"]].forEach(([k,c])=>{if(!d[k])return;const h=(H-pd-10)*d[k]/max;base-=h;sv+=`<rect x="${x}" y="${base}" width="${w}" height="${h}" fill="${c}"><title>${d.d} ${MONTHS[+m.split("-")[1]-1]}: ${d[k]}</title></rect>`});
     if(d.d===1||d.d%5===0)sv+=`<text x="${x+w/2}" y="${H-6}" text-anchor="middle">${d.d}</text>`});
   $("lead-chart").innerHTML=sv+"</svg>";
-  renderBron(m,L);
-  const rows=[...L].sort((a,b)=>b.datum.localeCompare(a.datum));
-  $("lead-table").innerHTML=rows.length?`<table><thead><tr><th>Lead</th><th>Binnen</th><th>Type</th><th>Bron</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${esc(l.naam)}</td><td class="num">${dLabel(l.datum)}</td><td><span class="chip">${esc(l.type)}</span></td><td>${esc(bronVan(l))}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nog geen leads in ${esc(monthLabel(m))}.</div>`;
+  renderUtm();
 }
 
 /* ---------- Intakes ---------- */
