@@ -392,7 +392,6 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
 .fin-tb tr.split td{font-size:13px;background:var(--soft)}
 #charttip{position:fixed;z-index:60;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);white-space:nowrap}#charttip[hidden]{display:none}#charttip b{font-weight:700}.tipband{cursor:crosshair}.tipband:hover{fill:rgba(39,159,218,.08)}
 .utm-t tr[data-uk]{cursor:pointer}.utm-t tr[data-uk]:hover td{background:var(--soft)}.utm-t tr.sel td{background:var(--soft);box-shadow:inset 0 -1px 0 var(--blue)}.utm-t .tg{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;width:18px;padding:0;display:inline-block}.utm-t .tg.op{transform:rotate(90deg)}.utm-t .sp{display:inline-block;width:18px}.utm-t tr.l2 td:first-child{padding-left:30px}.utm-t tr.l3 td:first-child{padding-left:52px}.utm-t tr.l2 td,.utm-t tr.l3 td{font-size:13px}.utm-t tr.tot td{border-top:2px solid var(--line)}
-.kpi6{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1200px){.kpi6{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){.kpi6{grid-template-columns:minmax(0,1fr)}}
 .kpi4{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(max-width:600px){.kpi4{grid-template-columns:minmax(0,1fr)!important}}
 .fin-ch{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}.fin-ch>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.fin-ch h4{margin:0 0 4px;font-size:12px}.fin-ch svg{width:100%;height:auto;display:block}.fin-ch text{font-size:9px;fill:var(--muted)}
 .pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.none{background:var(--soft);color:var(--muted)}
@@ -505,7 +504,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       <div class="ph"><div><div class="eyebrow">Marketing</div><h1>Leads &amp; bronnen</h1></div><button class="btn ghost" data-new="lead"><svg><use href="#i-plus"/></svg>Overige aanvraag</button></div>
       <div class="subnav" data-g="marketing"><button data-t="leads">Leads &amp; bronnen</button><button data-t="kosten">Kosten &amp; rendement</button><button data-t="socials">Socials</button></div>
       <div id="bron-alert"></div>
-      <div class="grid4 kpi6" id="lead-kpis"></div>
+      <div class="grid4" id="lead-kpis"></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Funnel per bron</h3><div class="muted" style="font-size:12px">Van lead naar intake, voortraject en realisatie. Rood = loopt het verst achter op de rest.</div></div><div class="seg fun-range"><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="bron-funnel" class="tbl" style="margin-top:8px"></div></div>
       <div class="card"><div class="row between" style="margin-bottom:4px;flex-wrap:wrap;gap:8px"><div><h3>Wat levert het op</h3><div class="muted" style="font-size:12px">Leads die in deze periode binnenkwamen en wat eruit kwam, per bron, campagne en video. Klik op een rij voor de leads, op ▸ om open te klappen.</div></div><div class="seg" id="utm-range"><button type="button" data-r="w">Deze week</button><button type="button" data-r="m">Deze maand</button><button type="button" data-r="j">Dit jaar</button></div></div><div id="utm-tabel" class="tbl" style="margin-top:8px"></div></div>
       <div class="card chart"><div class="row between" style="margin-bottom:8px"><h3 id="lead-chart-t">Per dag</h3><div class="legend" id="lead-legend"></div></div><div id="lead-chart"></div></div>
@@ -676,7 +675,7 @@ function photoOf(naam){for(const k in S.profielen){const p=S.profielen[k];if(p&&
 function avatarHtml(naam,sz){const f=photoOf(naam);const st=`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.38)}px`;
   return f?`<img class="ini" style="${st}" src="${esc(f)}" alt="${esc(naam||"")}">`:`<span class="ini" style="${st};background:${PCOL[naam]||"#5F6B75"}">${esc((naam||"?")[0])}</span>`}
 const TARGET_FIELDS=[
- ["fa_leads","FA totaal","Leads"],["fa_intakes","FA totaal","Intakes"],["fa_voortrajecten","FA totaal","Voortrajecten"],["fa_bruto","FA totaal","Bruto marge (€)"],
+ ["fa_leads","FA totaal","Leads"],["fa_offertes","FA totaal","Offerteaanvragen"],["fa_intakes","FA totaal","Intakes"],["fa_voortrajecten","FA totaal","Voortrajecten"],["fa_bruto","FA totaal","Bruto marge (€)"],
  ["stijn_intakes","Stijn","Intakes"],["stijn_voortrajecten","Stijn","Voortrajecten"],["stijn_bruto","Stijn","Bruto marge (€)"],
  ["timo_bruto","Timo","Bruto marge (€)"],
  ["kevin_intakes","Kevin","Intakes"],["kevin_bruto","Kevin","Bruto marge (€)"],["kevin_bruto_min","Kevin","Ondergrens bruto marge (€)"],
@@ -967,10 +966,9 @@ document.addEventListener("click",e=>{const c=e.target.closest("#bron-funnel [da
 function renderLeads(){
   const m=S.month,s=stats(m),L=s.L,T=s.T,j=judge(L.length,T.fa_leads,m,false);
   const cnt=k=>L.filter(l=>l.type===k).length;
-  const jr=S.leads.filter(l=>nieuweLead(l)&&String(l.datum||"").slice(0,4)===m.slice(0,4)&&String(l.datum||"")<=m+"-31");
-  const won=jr.filter(l=>uitkomst(l)==="gewonnen"&&ym(leadWonOp(l))===m),wonJ=jr.filter(l=>uitkomst(l)==="gewonnen"),som=a=>a.reduce((x,l)=>x+leadMarge(l),0),opn=jr.filter(l=>uitkomst(l)==="open").length;
-  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:"","l"],["Offerteaanvragen",cnt("Offerteaanvraag"),"via de website","o"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars","e"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social","x"],
-    ["Gewonnen deze maand",won.length,`${eurK(som(won))} bruto marge · dit jaar ${wonJ.length} (${eurK(som(wonJ))})`,null],["Open",opn,`leads van dit jaar waar nog iets loopt in Odoo`,null]]
+  // Target offerteaanvragen: uit Targets, anders 25 per maand
+  const tOf=+T.fa_offertes||25,jo=judge(cnt("Offerteaanvraag"),tOf,m,false);
+  $("lead-kpis").innerHTML=[["Totaal",L.length,T.fa_leads?`van ${T.fa_leads} · <span class="status ${j.cls}" style="padding:1px 8px">${j.label}</span>`:"","l"],["Offerteaanvragen",cnt("Offerteaanvraag"),`van ${tOf} · <span class="status ${jo.cls}" style="padding:1px 8px">${jo.label}</span>`,"o"],["Softleads",cnt("E-book"),"e-books, te bellen door Lars","e"],["Overige aanvragen",cnt("Overige aanvraag"),"bellen, mail, netwerk, social","x"]]
     .map(([k,v,sub,bk])=>`<div class="card" data-bron="" data-maand="1"${v&&bk?` data-bk="${bk}" title="Klik om de leads te zien"`:""}><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
   $("lead-legend").innerHTML=Object.entries(TYPE_COL).map(([k,c])=>`<span style="--c:${c}">${k==="E-book"?"Softlead (e-book)":k}</span>`).join("");
   $("lead-chart-t").textContent="Per dag · "+monthLabel(m);
