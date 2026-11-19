@@ -455,6 +455,8 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <button data-t="intakes"><svg><use href="#i-intake"/></svg>Intakes<span class="cnt" id="c-intakes">0</span></button>
     <button data-t="marge"><svg><use href="#i-euro"/></svg>Bruto marge</button>
     <button data-t="odoo"><svg><use href="#i-odoo"/></svg>Offertes &amp; pijplijn</button>
+    <div class="grp">Projecten</div>
+    <button data-t="projecten"><svg><use href="#i-cal"/></svg>Projecten</button>
     <div class="grp fin-only" hidden>Financieel</div>
     <button data-t="financieel" class="fin-only" hidden><svg><use href="#i-lock"/></svg>Financieel</button>
     <div class="grp">Beheer</div>
@@ -582,6 +584,15 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
       </div>
     </section>
 
+    <section data-p="projecten" hidden>
+      <div class="ph"><div><div class="eyebrow">Projecten</div><h1>Projecten</h1></div><div class="seg" id="pj-soort"><button type="button" data-s="Design">Design</button><button type="button" data-s="Project">Project</button></div></div>
+      <div class="grid4" id="pj-kpis"></div>
+      <div class="card"><div style="margin-bottom:6px"><h3>Tijd per fase</h3><div class="muted" style="font-size:12px">Gemiddeld aantal dagen dat een project in een fase zat (afgeronde fases), en wat er nu in elke fase staat. Klik op een fase voor de trend.</div></div><div id="pj-fases" class="tbl"></div></div>
+      <div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:8px"><div><h3>Trend per maand</h3><div class="muted" style="font-size:12px" id="pj-trend-sub"></div></div></div><div class="fin-ch" id="pj-trends"></div></div>
+      <details class="card fin-sc" id="pj-lijst-d"><summary id="pj-lijst-t">Projecten</summary><div id="pj-lijst" class="tbl"></div></details>
+      <p class="muted" style="font-size:12px" id="pj-noot"></p>
+    </section>
+
     <section data-p="targets" hidden>
       <div class="ph"><div><div class="eyebrow">Instellingen</div><h1 id="tg-title">Targets</h1></div></div>
       <div class="card">
@@ -601,6 +612,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
   <button data-t="overzicht"><svg><use href="#i-home"/></svg>Overzicht</button>
   <button data-t="leads" data-g="marketing"><svg><use href="#i-leads"/></svg>Marketing</button>
   <button data-t="intakes" data-g="sales"><svg><use href="#i-intake"/></svg>Sales</button>
+  <button data-t="projecten"><svg><use href="#i-cal"/></svg>Projecten</button>
   <button data-t="targets"><svg><use href="#i-target"/></svg>Targets</button>
 </nav>
 
@@ -681,7 +693,7 @@ const TARGET_FIELDS=[
  ["kevin_intakes","Kevin","Intakes"],["kevin_bruto","Kevin","Bruto marge (€)"],["kevin_bruto_min","Kevin","Ondergrens bruto marge (€)"],
  ["lars_intakes","Lars","Gekwalificeerde intakes"],["lars_intakes_min","Lars","Ondergrens intakes"]];
 const MONTHS=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-const TABS=["overzicht","leads","kosten","intakes","marge","odoo","targets","financieel","socials"];
+const TABS=["overzicht","leads","kosten","intakes","marge","odoo","targets","financieel","socials","projecten"];
 const GROEP={leads:"marketing",kosten:"marketing",socials:"marketing",intakes:"sales",marge:"sales",odoo:"sales"};
 const S={intakes:[],marge:[],leads:[],targets:{},odoo:null,trend:[],orders:[],trendRange:8,bronRange:"m",kosten:[],trendHide:{},month:null,tab:"overzicht",db:null,user:null,meId:null,meName:"",canEdit:false,readOnly:false,editInt:null,editMg:null,profielen:{},meAvatar:"",seen:null,celebrated:new Set(),loaded:false};
 const $=id=>document.getElementById(id);
@@ -985,6 +997,48 @@ function renderLeads(){
   renderUtm();
 }
 
+
+/* ---------- Projecten (Odoo projectmodule, via n8n 'Projecten cockpit') ---------- */
+// Doorlooptijd = kick-off (of aanmaak project) tot datum Done. Tijd per fase = datum volgende fase min datum deze fase (of Odoo-veld 'Dagen in ...').
+// Orderwaarde = omzet van de verkooporder (excl. btw), geen bruto marge.
+const PJ_KLEUR=["#279FDA","#0D1B26","#E0A100","#3CB371","#E0457B","#8A63D2","#5F6B75"];
+const gem=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const dagS=v=>v==null?"–":Math.round(v).toLocaleString("nl-NL")+" d";
+const plusDag=(d,n)=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+function pjMaanden(){const nu=curMonth();const out=[];let [y,m]=nu.split("-").map(Number);for(let i=0;i<12;i++){out.unshift(y+"-"+pad(m));m--;if(!m){m=12;y--}}return out}
+function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pjSoort||"Design";
+  document.querySelectorAll("#pj-soort button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===S.pjSoort)));
+  if(!D||!Array.isArray(D.projecten)){$("pj-kpis").innerHTML=`<div class="card empty" style="grid-column:1/-1">Nog geen projectdata uit Odoo.</div>`;return}
+  const P=D.projecten.filter(p=>p.soort===S.pjSoort),FS=D.fases||[];const jr=curMonth().slice(0,4);
+  const af=P.filter(p=>p.totaal!=null),ord=P.filter(p=>p.order&&p.order.bedrag>0),lopend=P.filter(p=>!p.afgerond),afJ=P.filter(p=>p.done&&p.done.slice(0,4)===jr);
+  $("pj-kpis").innerHTML=[["Gem. doorlooptijd",dagS(gem(af.map(p=>p.totaal))),`kick-off tot Done · ${af.length} projecten`],
+    ["Gem. orderwaarde",ord.length?eur(gem(ord.map(p=>p.order.bedrag))):"–",`omzet excl. btw · ${ord.length} orders`],
+    ["Lopend",lopend.length,"projecten nog niet afgerond"],["Afgerond in "+jr,afJ.length,"met datum Done"]]
+    .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
+  // per fase
+  const rij=FS.map((f,i)=>{const kl=P.map(p=>(p.fases||{})[f.k]).filter(Boolean);const klaar=kl.filter(x=>!x.lopend),nu=kl.filter(x=>x.lopend);
+    return {...f,i,klaar,nu,gem:gem(klaar.map(x=>x.dagen)),gemNu:gem(nu.map(x=>x.dagen))}}).filter(r=>r.klaar.length||r.nu.length);
+  if(S.pjFase&&!rij.some(r=>r.k===S.pjFase))S.pjFase=null;
+  const tot=gem(af.map(p=>p.totaal));
+  $("pj-fases").innerHTML=rij.length?`<table class="utm-t"><thead><tr><th>Fase</th><th class="r">Gem. dagen</th><th class="r">Afgerond</th><th class="r">Nu in fase</th><th class="r">Gem. dagen nu</th></tr></thead><tbody>${rij.map(r=>`<tr data-pjf="${r.k}"${S.pjFase===r.k?' class="sel"':""}><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${PJ_KLEUR[r.i%PJ_KLEUR.length]};margin-right:8px"></span><b>${esc(r.naam)}</b></td><td class="r num"><b>${dagS(r.gem)}</b></td><td class="r num">${r.klaar.length}</td><td class="r num">${r.nu.length||'<span class="muted">0</span>'}</td><td class="r num">${r.nu.length?dagS(r.gemNu):'<span class="muted">–</span>'}</td></tr>`).join("")}<tr class="tot"><td><b>Totale doorlooptijd</b> <span class="muted" style="font-size:12px">kick-off tot Done</span></td><td class="r num"><b>${dagS(tot)}</b></td><td class="r num">${af.length}</td><td class="r num">${lopend.length}</td><td></td></tr></tbody></table>`:`<div class="empty">Nog geen fasedata voor ${esc(S.pjSoort)}.</div>`;
+  // trends: per maand waarin de fase werd afgerond / het project Done ging / de order werd bevestigd
+  const mnd=pjMaanden();
+  const perM=(lijst,mOf,val)=>mnd.map(m=>{const v=lijst.filter(x=>mOf(x)===m).map(val);return v.length?Math.round(gem(v)):null});
+  const toon=S.pjFase?rij.filter(r=>r.k===S.pjFase):rij;
+  const series=toon.map(r=>({label:r.naam,kleur:PJ_KLEUR[r.i%PJ_KLEUR.length],vals:perM(r.klaar,x=>ym(plusDag(x.datum,x.dagen)),x=>x.dagen)}));
+  $("pj-trend-sub").textContent=`Laatste 12 maanden. Fase: gemiddelde dagen, geteld in de maand dat de fase klaar was${S.pjFase?"":" (klik op een fase voor één lijn)"}. Doorlooptijd: maand van Done. Orderwaarde: maand van de order.`;
+  $("pj-trends").innerHTML=(series.length?trendMulti("Dagen per fase",mnd,series,v=>Math.round(v)+" d"):"")
+    +trendLijn("Doorlooptijd (dagen)",mnd,perM(af,p=>ym(p.done),p=>p.totaal),mnd.map(()=>null),v=>Math.round(v)+" d")
+    +trendLijn("Gem. orderwaarde (omzet)",mnd,perM(ord,p=>ym(p.order.datum),p=>p.order.bedrag),mnd.map(()=>null),eurK);
+  // lijst
+  const L=[...P].sort((a,b)=>(a.afgerond-b.afgerond)||String(b.start).localeCompare(String(a.start)));
+  $("pj-lijst-t").innerHTML=`Projecten <span class="muted" style="font-weight:500;font-size:13px">${P.length} · ${lopend.length} lopend</span>`;
+  $("pj-lijst").innerHTML=L.length?`<table><thead><tr><th>Project</th><th>Fase</th><th class="r">Dagen in fase</th><th>Start</th><th class="r">Doorlooptijd</th><th class="r">Orderwaarde</th></tr></thead><tbody>${L.map(p=>{const nu=Object.values(p.fases||{}).find(x=>x.lopend);
+    return `<tr><td><b>${esc(p.naam)}</b>${p.klant?`<div class="muted" style="font-size:11px">${esc(p.klant)}</div>`:""}</td><td><span class="chip">${esc(p.fase||"")}</span></td><td class="r num">${nu?dagS(nu.dagen):'<span class="muted">–</span>'}</td><td class="num">${p.start?dLabel(p.start)+" '"+p.start.slice(2,4):""}</td><td class="r num">${p.totaal!=null?dagS(p.totaal):'<span class="muted">–</span>'}</td><td class="r num">${p.order&&p.order.bedrag?eur(p.order.bedrag):'<span class="muted">–</span>'}</td></tr>`}).join("")}</tbody></table>`:`<div class="empty">Geen projecten.</div>`;
+  $("pj-noot").textContent=`Uit de Odoo-projectmodule, elk uur bijgewerkt${D.bijgewerkt?" (laatst "+new Date(D.bijgewerkt).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+")":""}. Orderwaarde is omzet van de verkooporder, geen bruto marge. Transport, levering apparatuur, consultancy en sjablonen tellen niet mee. Fasedatums worden in Odoo pas sinds medio 2026 bijgehouden.`}
+document.addEventListener("click",e=>{const b=e.target.closest("#pj-soort button");if(b){S.pjSoort=b.dataset.s;S.pjFase=null;renderProjecten();return}
+  const r=e.target.closest("#pj-fases tr[data-pjf]");if(r){S.pjFase=S.pjFase===r.dataset.pjf?null:r.dataset.pjf;renderProjecten()}});
+
 /* ---------- Intakes ---------- */
 function personBars(vals,tg,total,money,m){const f=frac(m);
   return PEOPLE.map(p=>{const v=vals[p]||0,t=tg[p];const j=judge(v,t,m,money);const w=t?Math.min(100,v/t*100):(v?Math.min(100,v/Math.max(1,total)*100):0);
@@ -1234,7 +1288,7 @@ function renderHello(){renderMe();
   $("hello-sub").textContent=new Date().toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   const s=stats(curMonth());$("c-leads").textContent=s.leads;$("c-intakes").textContent=s.intakes;
 }
-let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOrdTarget();renderTrends();renderSocials();renderOdoo();renderFin();revealAll()})}
+let raf=0;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{renderMonths();renderHello();renderOverview();renderLeads();renderFunnel();renderKosten();renderIntakes();renderMarge();renderTargets();renderOrdTarget();renderTrends();renderSocials();renderOdoo();renderFin();renderProjecten();revealAll()})}
 function showTab(t,push){if(!TABS.includes(t))t="overzicht";S.tab=t;document.querySelectorAll("section[data-p]").forEach(s=>s.hidden=s.dataset.p!==t);
   document.querySelectorAll("#menu button,.subnav button").forEach(b=>{if(b.dataset.t===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   document.querySelectorAll("#bottom button").forEach(b=>{if(b.dataset.t===t||(b.dataset.g&&b.dataset.g===GROEP[t]))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
@@ -1719,6 +1773,7 @@ async function boot(){
   // Leads met telt:false (dubbel of in Odoo samengevoegd, gemarkeerd door de leadcontrole) tellen nergens mee.
   const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>key!=="leads"||x.telt!==false);render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
   sub("intakes","intakes");sub("marge","marge");sub("leads","leads");
+  db.collection("projecten").onSnapshot(snap=>{const d=snap.docs.find(x=>x.id==="alle");S.proj=d?d.data():null;render()},()=>{});
   db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("orderportefeuille").onSnapshot(snap=>{S.orders=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
