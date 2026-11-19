@@ -585,7 +585,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     </section>
 
     <section data-p="projecten" hidden>
-      <div class="ph"><div><div class="eyebrow">Projecten</div><h1>Projecten</h1></div><div class="seg" id="pj-soort"><button type="button" data-s="Design">Design</button><button type="button" data-s="Project">Project</button></div></div>
+      <div class="ph"><div><div class="eyebrow">Projecten</div><h1>Projecten</h1></div><div class="seg" id="pj-soort"><button type="button" data-s="Alle">Alle projecten</button><button type="button" data-s="Design">Design</button><button type="button" data-s="Project">Project</button></div></div>
       <div class="grid4" id="pj-kpis"></div>
       <div class="card"><div style="margin-bottom:6px"><h3>Tijd per fase</h3><div class="muted" style="font-size:12px">Gemiddeld aantal dagen dat een project in een fase zat (afgeronde fases), en wat er nu in elke fase staat. Klik op een fase voor de trend.</div></div><div id="pj-fases" class="tbl"></div></div>
       <div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:8px"><div><h3>Trend per maand</h3><div class="muted" style="font-size:12px" id="pj-trend-sub"></div></div></div><div class="fin-ch" id="pj-trends"></div></div>
@@ -1006,10 +1006,10 @@ const gem=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const dagS=v=>v==null?"–":Math.round(v).toLocaleString("nl-NL")+" d";
 const plusDag=(d,n)=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
 function pjMaanden(){const nu=curMonth();const out=[];let [y,m]=nu.split("-").map(Number);for(let i=0;i<12;i++){out.unshift(y+"-"+pad(m));m--;if(!m){m=12;y--}}return out}
-function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pjSoort||"Design";
+function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pjSoort||"Alle";
   document.querySelectorAll("#pj-soort button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===S.pjSoort)));
   if(!D||!Array.isArray(D.projecten)){$("pj-kpis").innerHTML=`<div class="card empty" style="grid-column:1/-1">Nog geen projectdata uit Odoo.</div>`;return}
-  const P=D.projecten.filter(p=>p.soort===S.pjSoort),FS=D.fases||[];const jr=curMonth().slice(0,4);
+  const P=D.projecten.filter(p=>S.pjSoort==="Alle"||p.soort===S.pjSoort),FS=D.fases||[];const jr=curMonth().slice(0,4);
   const af=P.filter(p=>p.totaal!=null),ord=P.filter(p=>p.order&&p.order.bedrag>0),lopend=P.filter(p=>!p.afgerond),afJ=P.filter(p=>p.done&&p.done.slice(0,4)===jr);
   $("pj-kpis").innerHTML=[["Gem. doorlooptijd",dagS(gem(af.map(p=>p.totaal))),`kick-off tot Done · ${af.length} projecten`],
     ["Gem. orderwaarde",ord.length?eur(gem(ord.map(p=>p.order.bedrag))):"–",`omzet excl. btw · ${ord.length} orders`],
@@ -1020,7 +1020,7 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
     return {...f,i,klaar,nu,gem:gem(klaar.map(x=>x.dagen)),gemNu:gem(nu.map(x=>x.dagen).filter(v=>v!=null))}}).filter(r=>r.klaar.length||r.nu.length);
   if(S.pjFase&&!rij.some(r=>r.k===S.pjFase))S.pjFase=null;
   const tot=gem(af.map(p=>p.totaal));
-  $("pj-fases").innerHTML=rij.length?`<table class="utm-t"><thead><tr><th>Fase</th><th class="r">Gem. dagen</th><th class="r">Afgerond</th><th class="r">Nu in fase</th><th class="r">Gem. dagen nu</th></tr></thead><tbody>${rij.map(r=>`<tr data-pjf="${r.k}"${S.pjFase===r.k?' class="sel"':""}><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${PJ_KLEUR[r.i%PJ_KLEUR.length]};margin-right:8px"></span><b>${esc(r.naam)}</b></td><td class="r num"><b>${dagS(r.gem)}</b></td><td class="r num">${r.klaar.length}</td><td class="r num">${r.nu.length||'<span class="muted">0</span>'}</td><td class="r num">${r.nu.length?dagS(r.gemNu):'<span class="muted">–</span>'}</td></tr>`).join("")}<tr class="tot"><td><b>Totale doorlooptijd</b> <span class="muted" style="font-size:12px">kick-off tot Done</span></td><td class="r num"><b>${dagS(tot)}</b></td><td class="r num">${af.length}</td><td class="r num">${lopend.length}</td><td></td></tr></tbody></table>`:`<div class="empty">Nog geen fasedata voor ${esc(S.pjSoort)}.</div>`;
+  $("pj-fases").innerHTML=rij.length?`<table class="utm-t"><thead><tr><th>Fase</th><th class="r">Gem. dagen</th><th class="r">Afgerond</th><th class="r">Nu in fase</th><th class="r">Gem. dagen nu</th></tr></thead><tbody>${rij.map(r=>`<tr data-pjf="${r.k}"${S.pjFase===r.k?' class="sel"':""}><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${PJ_KLEUR[r.i%PJ_KLEUR.length]};margin-right:8px"></span><b>${esc(r.naam)}</b></td><td class="r num"><b>${dagS(r.gem)}</b></td><td class="r num">${r.klaar.length}</td><td class="r num">${r.nu.length||'<span class="muted">0</span>'}</td><td class="r num">${r.nu.length?dagS(r.gemNu):'<span class="muted">–</span>'}</td></tr>`).join("")}<tr class="tot"><td><b>Totale doorlooptijd</b> <span class="muted" style="font-size:12px">kick-off tot Done</span></td><td class="r num"><b>${dagS(tot)}</b></td><td class="r num">${af.length}</td><td class="r num">${lopend.length}</td><td></td></tr></tbody></table>`:`<div class="empty">Nog geen fasedata.</div>`;
   // trends: per maand waarin de fase werd afgerond / het project Done ging / de order werd bevestigd
   const mnd=pjMaanden();
   const perM=(lijst,mOf,val)=>mnd.map(m=>{const v=lijst.filter(x=>mOf(x)===m).map(val);return v.length?Math.round(gem(v)):null});
