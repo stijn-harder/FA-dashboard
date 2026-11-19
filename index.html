@@ -1000,7 +1000,7 @@ function renderLeads(){
 
 /* ---------- Projecten (Odoo projectmodule, via n8n 'Projecten cockpit') ---------- */
 // Doorlooptijd = kick-off (of aanmaak project) tot datum Done. Tijd per fase = datum volgende fase min datum deze fase (of Odoo-veld 'Dagen in ...').
-// Orderwaarde = omzet van de verkooporder (excl. btw), geen bruto marge.
+// Orderwaarde = omzet van alle bevestigde verkooporders van het project (excl. btw, incl. meerwerk), geen bruto marge.
 const PJ_KLEUR=["#279FDA","#0D1B26","#E0A100","#3CB371","#E0457B","#8A63D2","#5F6B75"];
 const gem=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const dagS=v=>v==null?"–":Math.round(v).toLocaleString("nl-NL")+" d";
@@ -1010,9 +1010,9 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
   document.querySelectorAll("#pj-soort button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===S.pjSoort)));
   if(!D||!Array.isArray(D.projecten)){$("pj-kpis").innerHTML=`<div class="card empty" style="grid-column:1/-1">Nog geen projectdata uit Odoo.</div>`;return}
   const P=D.projecten.filter(p=>S.pjSoort==="Alle"||p.soort===S.pjSoort),FS=D.fases||[];const jr=curMonth().slice(0,4);
-  const af=P.filter(p=>p.totaal!=null),ord=P.filter(p=>p.order&&p.order.bedrag>0),lopend=P.filter(p=>!p.afgerond),afJ=P.filter(p=>p.done&&p.done.slice(0,4)===jr);
+  const af=P.filter(p=>p.totaal!=null),ord=P.filter(p=>p.order&&p.order.bedrag>0),ordLop=ord.filter(p=>!p.afgerond&&/^fase [0-6]\b/i.test(p.fase||"")),lopend=P.filter(p=>!p.afgerond),afJ=P.filter(p=>p.done&&p.done.slice(0,4)===jr);
   $("pj-kpis").innerHTML=[["Gem. doorlooptijd",dagS(gem(af.map(p=>p.totaal))),`kick-off tot Done · ${af.length} projecten`],
-    ["Gem. orderwaarde",ord.length?eur(gem(ord.map(p=>p.order.bedrag))):"–",`omzet excl. btw · ${ord.length} orders`],
+    ["Gem. orderwaarde",ordLop.length?eur(gem(ordLop.map(p=>p.order.bedrag))):"–",`excl. btw, incl. meerwerk · ${ordLop.length} lopende projecten (fase 0 t/m 6)`],
     ["Lopend",lopend.length,"projecten nog niet afgerond"],["Afgerond in "+jr,afJ.length,"met datum Done"]]
     .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
   // per fase
@@ -1029,15 +1029,15 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
   $("pj-trend-sub").textContent=`Laatste 12 maanden. Fase: gemiddelde dagen, geteld in de maand dat de fase klaar was${S.pjFase?"":" (klik op een fase voor één lijn)"}. Doorlooptijd: maand van Done. Orderwaarde: maand van de order.`;
   $("pj-trends").innerHTML=(series.length?trendMulti("Dagen per fase",mnd,series,v=>Math.round(v)+" d"):"")
     +trendLijn("Doorlooptijd (dagen)",mnd,perM(af,p=>ym(p.done),p=>p.totaal),mnd.map(()=>null),v=>Math.round(v)+" d")
-    +trendLijn("Gem. orderwaarde (omzet)",mnd,perM(ord,p=>ym(p.order.datum),p=>p.order.bedrag),mnd.map(()=>null),eurK);
+    +trendLijn("Gem. orderwaarde (omzet excl. btw)",mnd,perM(ord,p=>ym(p.order.datum),p=>p.order.bedrag),mnd.map(()=>null),eurK);
   // lijst
   // Volgorde: op fase (Fase 0 tot 6, dan afgerond), binnen een fase het langst in die fase bovenaan.
   const fIdx=p=>{const m=/^fase (\d)/i.exec(p.fase||"");return p.afgerond?99:m?+m[1]:50};const inFase=p=>{const x=Object.values(p.fases||{}).find(x=>x.lopend);return x&&x.dagen!=null?x.dagen:-1};
   const L=[...P].sort((a,b)=>fIdx(a)-fIdx(b)||inFase(b)-inFase(a)||String(b.done||b.start).localeCompare(String(a.done||a.start)));
   $("pj-lijst-t").innerHTML=`Projecten <span class="muted" style="font-weight:500;font-size:13px">${P.length} · ${lopend.length} lopend</span>`;
-  $("pj-lijst").innerHTML=L.length?`<table><thead><tr><th>Project</th><th>Fase</th><th class="r">Dagen in fase</th><th>Start</th><th class="r">Doorlooptijd</th><th class="r">Orderwaarde</th></tr></thead><tbody>${L.map(p=>{const nu=Object.values(p.fases||{}).find(x=>x.lopend);
+  $("pj-lijst").innerHTML=L.length?`<table><thead><tr><th>Project</th><th>Fase</th><th class="r">Dagen in fase</th><th>Start</th><th class="r">Doorlooptijd</th><th class="r">Orderwaarde <span class="muted" style="font-weight:500">excl. btw</span></th></tr></thead><tbody>${L.map(p=>{const nu=Object.values(p.fases||{}).find(x=>x.lopend);
     return `<tr><td><b>${esc(p.naam)}</b>${p.klant?`<div class="muted" style="font-size:11px">${esc(p.klant)}</div>`:""}</td><td><span class="chip">${esc(p.fase||"")}</span></td><td class="r num">${nu?dagS(nu.dagen):'<span class="muted">–</span>'}</td><td class="num">${p.start?dLabel(p.start)+" '"+p.start.slice(2,4):""}</td><td class="r num">${p.totaal!=null?dagS(p.totaal):'<span class="muted">–</span>'}</td><td class="r num">${p.order&&p.order.bedrag?eur(p.order.bedrag):'<span class="muted">–</span>'}</td></tr>`}).join("")}</tbody></table>`:`<div class="empty">Geen projecten.</div>`;
-  $("pj-noot").textContent=`Uit de Odoo-projectmodule, elk uur bijgewerkt${D.bijgewerkt?" (laatst "+new Date(D.bijgewerkt).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+")":""}. Orderwaarde is omzet van de verkooporder, geen bruto marge. Transport, levering apparatuur, consultancy en sjablonen tellen niet mee. Fasedatums worden in Odoo pas sinds medio 2026 bijgehouden.`}
+  $("pj-noot").textContent=`Uit de Odoo-projectmodule, elk uur bijgewerkt${D.bijgewerkt?" (laatst "+new Date(D.bijgewerkt).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+")":""}. Orderwaarde is de omzet excl. btw van alle bevestigde verkooporders van het project, inclusief meerwerk (orders met dit project in het veld Project), geen bruto marge. De gemiddelde orderwaarde bovenaan telt alleen lopende projecten in fase 0 t/m 6. Transport, levering apparatuur, consultancy en sjablonen tellen niet mee. Fasedatums worden in Odoo pas sinds medio 2026 bijgehouden.`}
 document.addEventListener("click",e=>{const b=e.target.closest("#pj-soort button");if(b){S.pjSoort=b.dataset.s;S.pjFase=null;renderProjecten();return}
   const r=e.target.closest("#pj-fases tr[data-pjf]");if(r){S.pjFase=S.pjFase===r.dataset.pjf?null:r.dataset.pjf;renderProjecten()}});
 
