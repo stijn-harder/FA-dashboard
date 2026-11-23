@@ -587,6 +587,7 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <section data-p="projecten" hidden>
       <div class="ph"><div><div class="eyebrow">Projecten</div><h1>Projecten</h1></div><div class="seg" id="pj-soort"><button type="button" data-s="Alle">Alle projecten</button><button type="button" data-s="Design">Design</button><button type="button" data-s="Project">Project</button></div></div>
       <div class="grid4" id="pj-kpis"></div>
+      <div class="card"><div style="margin-bottom:6px"><h3>Gem. orderwaarde lopende projecten per week</h3><div class="muted" style="font-size:12px" id="pj-week-sub">Elke woensdag gemeten: gemiddelde orderwaarde (excl. btw, incl. meerwerk) van lopende projecten in fase 0 t/m 6.</div></div><div class="fin-ch" style="grid-template-columns:1fr;margin-top:6px" id="pj-week"></div></div>
       <div class="card"><div style="margin-bottom:6px"><h3>Tijd per fase</h3><div class="muted" style="font-size:12px">Gemiddeld aantal dagen dat een project in een fase zat (afgeronde fases), en wat er nu in elke fase staat. Klik op een fase voor de trend.</div></div><div id="pj-fases" class="tbl"></div></div>
       <div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:8px"><div><h3>Trend per maand</h3><div class="muted" style="font-size:12px" id="pj-trend-sub"></div></div></div><div class="fin-ch" id="pj-trends"></div></div>
       <details class="card fin-sc" id="pj-lijst-d"><summary id="pj-lijst-t">Projecten</summary><div id="pj-lijst" class="tbl"></div></details>
@@ -1006,6 +1007,22 @@ const gem=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const dagS=v=>v==null?"–":Math.round(v).toLocaleString("nl-NL")+" d";
 const plusDag=(d,n)=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
 function pjMaanden(){const nu=curMonth();const out=[];let [y,m]=nu.split("-").map(Number);for(let i=0;i<12;i++){out.unshift(y+"-"+pad(m));m--;if(!m){m=12;y--}}return out}
+// Weektrend gem. orderwaarde lopende projecten: n8n schrijft elke woensdag projecten/week-YYYY-MM-DD {datum, gem:{Alle,Project,Design}, n:{...}}.
+const volgendeWo=()=>{const x=new Date();x.setDate(x.getDate()+((3-x.getDay()+7)%7));return x.getFullYear()+"-"+pad(x.getMonth()+1)+"-"+pad(x.getDate())};
+function pjWeekLijn(rows,k){const L=rows.filter(r=>r.gem&&r.gem[k]!=null).slice(-26);
+  if(!L.length)return `<div class="empty" style="font-size:13px">Eerste meting op woensdag ${dLabel(volgendeWo())}. Daarna komt er elke week een punt bij.</div>`;
+  const Wd=600,H=150,pl=14,pr=64,pt=18,pb=20,n=L.length,v=L.map(r=>r.gem[k]),mx=Math.max(...v)*1.1||1,mi=0,rg=mx-mi;
+  const X=i=>pl+(Wd-pl-pr)*(n>1?i/(n-1):.5),Y=x=>pt+(H-pt-pb)*(1-(x-mi)/rg);
+  const d=v.map((x,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(x).toFixed(1)).join("");const step=Math.ceil(n/8);
+  const laatste=v[n-1],vorige=n>1?v[n-2]:null,eerste=v[0];
+  const delta=(a,b,t)=>b==null?"":`<span style="color:${a>b?"var(--good)":a<b?"var(--bad)":"inherit"}">${a>b?"+":""}${eurK(a-b)}</span> ${t}`;
+  const tekst=[delta(laatste,vorige,"t.o.v. vorige week"),n>2?delta(laatste,eerste,"t.o.v. eerste meting ("+dLabel(L[0].datum)+")"):""].filter(Boolean).join(" · ");
+  return `<div><h4>${eur(laatste)} <span class="muted" style="font-weight:500">op ${dLabel(L[n-1].datum)} · ${L[n-1].n&&L[n-1].n[k]!=null?L[n-1].n[k]+" projecten":""}</span></h4>${tekst?`<div class="muted" style="font-size:12px;margin-bottom:4px">${tekst}</div>`:""}
+  <svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Gemiddelde orderwaarde lopende projecten per week"><text x="2" y="10">${eurK(mx)}</text><line x1="${pl}" x2="${Wd-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>
+  <path d="${d}" fill="none" stroke="#279FDA" stroke-width="2"/>${v.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x).toFixed(1)}" r="2.6" stroke="#279FDA" fill="var(--card)"/>`).join("")}
+  <text x="${Wd-pr+4}" y="${Y(laatste)-3}" style="fill:var(--fg);font-weight:700">${eurK(laatste)}</text>
+  ${L.map((r,i)=>i%step&&i!==n-1?"":`<text x="${X(i)}" y="${H-4}" text-anchor="middle">${dLabel(r.datum)}</text>`).join("")}
+  ${tipBanden(n,X,pt-6,H-pb,L.map((r,i)=>`Woensdag ${dLabel(r.datum)}\nGem. orderwaarde: ${eur(v[i])}\nLopende projecten: ${r.n&&r.n[k]!=null?r.n[k]:"–"}`))}</svg></div>`}
 function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pjSoort||"Alle";
   document.querySelectorAll("#pj-soort button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===S.pjSoort)));
   if(!D||!Array.isArray(D.projecten)){$("pj-kpis").innerHTML=`<div class="card empty" style="grid-column:1/-1">Nog geen projectdata uit Odoo.</div>`;return}
@@ -1015,6 +1032,7 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
     ["Gem. orderwaarde",ordLop.length?eur(gem(ordLop.map(p=>p.order.bedrag))):"–",`excl. btw, incl. meerwerk · ${ordLop.length} lopende projecten (fase 0 t/m 6)`],
     ["Lopend",lopend.length,"projecten nog niet afgerond"],["Afgerond in "+jr,afJ.length,"met datum Done"]]
     .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
+  $("pj-week").innerHTML=pjWeekLijn(S.projWeek||[],S.pjSoort);
   // per fase
   const rij=FS.map((f,i)=>{const kl=P.map(p=>(p.fases||{})[f.k]).filter(Boolean);const klaar=kl.filter(x=>!x.lopend),nu=kl.filter(x=>x.lopend);
     return {...f,i,klaar,nu,gem:gem(klaar.map(x=>x.dagen)),gemNu:gem(nu.map(x=>x.dagen).filter(v=>v!=null))}}).filter(r=>r.klaar.length||r.nu.length);
@@ -1775,7 +1793,7 @@ async function boot(){
   // Leads met telt:false (dubbel of in Odoo samengevoegd, gemarkeerd door de leadcontrole) tellen nergens mee.
   const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>key!=="leads"||x.telt!==false);render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
   sub("intakes","intakes");sub("marge","marge");sub("leads","leads");
-  db.collection("projecten").onSnapshot(snap=>{const d=snap.docs.find(x=>x.id==="alle");S.proj=d?d.data():null;render()},()=>{});
+  db.collection("projecten").onSnapshot(snap=>{const d=snap.docs.find(x=>x.id==="alle");S.proj=d?d.data():null;S.projWeek=snap.docs.filter(x=>String(x.id).startsWith("week-")).map(x=>x.data()).filter(x=>x&&x.datum).sort((a,b)=>a.datum.localeCompare(b.datum));render()},()=>{});
   db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("orderportefeuille").onSnapshot(snap=>{S.orders=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
