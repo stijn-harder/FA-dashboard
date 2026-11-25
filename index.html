@@ -588,7 +588,6 @@ nav.menu .grp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color
     <section data-p="projecten" hidden>
       <div class="ph"><div><div class="eyebrow">Projecten</div><h1>Projecten</h1></div><div class="seg" id="pj-soort"><button type="button" data-s="Alle">Alle projecten</button><button type="button" data-s="Design">Design</button><button type="button" data-s="Project">Project</button></div></div>
       <div class="grid4 kpi3" id="pj-kpis"></div>
-      <div class="card"><div style="margin-bottom:6px"><h3>Gem. orderwaarde lopende projecten per week</h3><div class="muted" style="font-size:12px" id="pj-week-sub">Elke woensdag gemeten: gemiddelde orderwaarde (excl. btw, incl. meerwerk) van lopende projecten in fase 0 t/m 6, zonder floorplanners.</div></div><div class="fin-ch" style="grid-template-columns:1fr;margin-top:6px" id="pj-week"></div></div>
       <div class="card"><div style="margin-bottom:6px"><h3>Tijd per fase</h3><div class="muted" style="font-size:12px">Gemiddeld aantal dagen dat een project in een fase zat (afgeronde fases), en wat er nu in elke fase staat. Klik op een fase voor de trend.</div></div><div id="pj-fases" class="tbl"></div></div>
       <div class="card"><div class="row between" style="margin-bottom:6px;flex-wrap:wrap;gap:8px"><div><h3>Trend per maand</h3><div class="muted" style="font-size:12px" id="pj-trend-sub"></div></div></div><div class="fin-ch" id="pj-trends"></div></div>
       <details class="card fin-sc" id="pj-lijst-d"><summary id="pj-lijst-t">Projecten</summary><div id="pj-lijst" class="tbl"></div></details>
@@ -1044,7 +1043,6 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
     ["Conversie design → realisatie",dsg.length?Math.round(conv.length/dsg.length*100)+"%":"–",`${conv.length} van ${dsg.length} afgeronde designs · zelfde klant`],
     ["Lopend",lopend.length,eenhLop],["Afgerond in "+jr,afJ.length,"met datum Done"]]
     .map(([k,v,sub])=>`<div class="card"><div class="eyebrow">${k}</div><div class="stat num">${v}</div><div class="muted" style="font-size:12px">${sub}</div></div>`).join("");
-  $("pj-week").innerHTML=pjWeekLijn(S.projWeek||[],S.pjSoort);
   // per fase
   const rij=FS.map((f,i)=>{const kl=P.map(p=>(p.fases||{})[f.k]).filter(Boolean);const klaar=kl.filter(x=>!x.lopend),nu=lopend.map(p=>(p.fases||{})[f.k]).filter(x=>x&&x.lopend);
     return {...f,i,klaar,nu,gem:gem(klaar.map(x=>x.dagen)),gemNu:gem(nu.map(x=>x.dagen).filter(v=>v!=null))}}).filter(r=>r.klaar.length||r.nu.length);
