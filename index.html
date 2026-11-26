@@ -1053,9 +1053,10 @@ function renderProjecten(){if(!$("pj-kpis"))return;const D=S.proj;S.pjSoort=S.pj
   const perM=(lijst,mOf,val)=>mnd.map(m=>{const v=lijst.filter(x=>mOf(x)===m).map(val);return v.length?Math.round(gem(v)):null});
   const toon=S.pjFase?rij.filter(r=>r.k===S.pjFase):rij;
   const series=toon.map(r=>({label:r.naam,kleur:PJ_KLEUR[r.i%PJ_KLEUR.length],vals:perM(r.klaar,x=>ym(plusDag(x.datum,x.dagen)),x=>x.dagen)}));
-  $("pj-trend-sub").textContent=`Laatste 12 maanden. Fase: gemiddelde dagen, geteld in de maand dat de fase klaar was${S.pjFase?"":" (klik op een fase voor één lijn)"}. Doorlooptijd: maand van Done. Bruto marge: startmaand van het project.`;
+  $("pj-trend-sub").textContent=`Laatste 12 maanden. Fase: gemiddelde dagen, geteld in de maand dat de fase klaar was${S.pjFase?"":" (klik op een fase voor één lijn)"}. Doorlooptijd: maand van Done. Bruto marge: startmaand van het project. Conversie: het 12-maandscijfer van de tegel, eind van elke maand vastgelegd (meting sinds november 2026).`;
   $("pj-trends").innerHTML=(series.length?trendMulti("Dagen per fase",mnd,series,v=>Math.round(v)+" d"):"")
     +trendLijn("Doorlooptijd (dagen)",mnd,perM(af,p=>ym(p.done),p=>p.totaal),mnd.map(()=>null),v=>Math.round(v)+" d")
+    +trendLijn("Conversie Design → Realisatie",mnd,mnd.map(m=>{const v=(S.projConvMaand||{})[m];return v&&v.pct!=null?+v.pct:null}),mnd.map(()=>null),v=>(Math.round(v*10)/10).toLocaleString("nl-NL")+"%")
     +trendLijn("Gem. bruto marge",mnd,perM(P.filter(p=>mgVan(p)!=null),p=>ym(p.start),mgVan),mnd.map(()=>null),eurK);
   // lijst
   // Volgorde: op fase (Fase 0 tot 6, dan afgerond), binnen een fase het langst in die fase bovenaan.
@@ -1811,7 +1812,7 @@ async function boot(){
   const sub=(path,key)=>db.collection(path).onSnapshot(snap=>{S[key]=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>key!=="leads"||x.telt!==false);render();if(!sub["_"+key]){sub["_"+key]=1;done()}},lost);
   sub("intakes","intakes");sub("marge","marge");sub("leads","leads");
   db.collection("projectmarge").onSnapshot(snap=>{const o={};snap.docs.forEach(d=>o[d.id]=d.data());S.pjMarge=o;if(document.activeElement&&document.activeElement.classList.contains("pj-mg"))return;render()},()=>{});
-  db.collection("projecten").onSnapshot(snap=>{const d=snap.docs.find(x=>x.id==="alle");S.proj=d?d.data():null;const cv=snap.docs.find(x=>x.id==="conversie-design");S.projConv=cv?cv.data():null;S.projWeek=snap.docs.filter(x=>String(x.id).startsWith("week-")).map(x=>x.data()).filter(x=>x&&x.datum).sort((a,b)=>a.datum.localeCompare(b.datum));render()},()=>{});
+  db.collection("projecten").onSnapshot(snap=>{const d=snap.docs.find(x=>x.id==="alle");S.proj=d?d.data():null;const cv=snap.docs.find(x=>x.id==="conversie-design");S.projConv=cv?cv.data():null;S.projConvMaand={};snap.docs.forEach(x=>{if(String(x.id).startsWith("conversie-maand-")){const v=x.data();if(v&&v.maand)S.projConvMaand[v.maand]=v}});S.projWeek=snap.docs.filter(x=>String(x.id).startsWith("week-")).map(x=>x.data()).filter(x=>x&&x.datum).sort((a,b)=>a.datum.localeCompare(b.datum));render()},()=>{});
   db.collection("kosten").onSnapshot(snap=>{S.kosten=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("odoo_trend").onSnapshot(snap=>{S.trend=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   db.collection("orderportefeuille").onSnapshot(snap=>{S.orders=snap.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
